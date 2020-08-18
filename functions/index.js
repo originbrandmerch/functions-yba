@@ -76,7 +76,7 @@ const sendEmail = (apiToken, user, password) => {
         });
 };
 
-exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('0 8-20 * * *')
+exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('7 8-20 * * *')
     .timeZone('America/Denver')
     .onRun(async context => {
         try {
@@ -93,6 +93,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 .catch(err => {
                     throw err;
                 });
+
+            console.log('Get Users');
 
             const username = functions.config().beachbody.username;
             const password = functions.config().beachbody.password;
@@ -187,6 +189,9 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 }
             });
             const beachBodyUsersPromises = await Promise.all(beachBodyUsers);
+
+            console.log('Done with Word Press Get');
+
             const updateRank = [];
             users.forEach(user => {
                 if (user.wordPressId) {
@@ -223,6 +228,9 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 }
             });
             const updatedRanks = await Promise.all(updateRank);
+
+            console.log('Done with Word Press Update');
+
             return {
                 beachBodyUsersPromises,
                 updatedRanks
