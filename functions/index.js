@@ -76,7 +76,7 @@ const sendEmail = (apiToken, user, password) => {
         });
 };
 
-exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('7 8-20 * * *')
+exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('*/10 8-20 * * *')
     .timeZone('America/Denver')
     .onRun(async context => {
         try {
