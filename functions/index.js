@@ -18,7 +18,7 @@ const randomPassword = length => {
     return pass;
 };
 
-const url = 'https://backend.ybashirts.com/api';
+const url = 'https://yba-shirts.uc.r.appspot.com/api';
 
 const sendEmail = (apiToken, user, password) => {
     const mailGunApiKey = functions.config().mailgun.key;
