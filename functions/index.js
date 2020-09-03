@@ -92,7 +92,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 .then(results => results.data)
                 .catch(err => {
                     console.error('new rank advancements');
-                    console.error(err);
+                    console.error(err.message);
                     throw err;
                 });
 
@@ -130,7 +130,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                     })
                                     .catch(err => {
                                         console.error('Update Word Press ID');
-                                        console.error(err);
+                                        console.error(err.message);
                                         throw err;
                                     });
                             } else {
@@ -177,7 +177,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                                     })
                                                     .catch(err => {
                                                         console.error('set rank updated');
-                                                        console.error(err);
+                                                        console.error(err.message);
                                                         throw err;
                                                     });
                                             })
@@ -190,7 +190,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                         })
                         .catch(err => {
                             console.error('get beachbody users');
-                            console.error(err);
+                            console.error(err.message);
                             throw err;
                         });
                     beachBodyUsers.push(getBeachBodyUser);
@@ -227,7 +227,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                 })
                                 .catch(err => {
                                     console.error('send email');
-                                    console.error(err);
+                                    console.error(err.message);
                                     throw err;
                                 });
                         })
@@ -247,7 +247,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             }
         } catch (err) {
             console.error('whole thing');
-            console.error(err);
+            console.error(err.message);
             throw err;
         }
     });
