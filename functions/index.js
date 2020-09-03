@@ -66,13 +66,15 @@ const sendEmail = (apiToken, user, password) => {
                     }
                 }
             } else {
-                throw new Error(JSON.stringify(response.data))
+                console.error('sending email from mail gun');
+                console.error(JSON.stringify(response.data));
             }
         })
         .then(config => axios(config))
         .then(results => results.data)
         .catch(err => {
-            throw err;
+            console.error('get Beach body email');
+            console.error(err.message);
         });
 };
 
@@ -93,7 +95,6 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 .catch(err => {
                     console.error('new rank advancements');
                     console.error(err.message);
-                    throw err;
                 });
 
             console.log('Get Users');
@@ -131,7 +132,6 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                     .catch(err => {
                                         console.error('Update Word Press ID');
                                         console.error(err.message);
-                                        throw err;
                                     });
                             } else {
                                 let password = randomPassword(10);
@@ -148,7 +148,6 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                     }
                                 })
                                     .then(({data}) => {
-                                        console.log(data);
                                         return axios({
                                             method: 'post',
                                             url: `${url}/updateWordPressId`,
@@ -176,13 +175,13 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                                         return sendEmail(apiToken, user, password);
                                                     })
                                                     .catch(err => {
-                                                        console.error('set rank updated');
+                                                        console.error('set rank updated 1');
                                                         console.error(err.message);
-                                                        throw err;
                                                     });
                                             })
                                             .catch(err => {
-                                                throw err;
+                                                console.error('update word press id 1');
+                                                console.error(err.message);
                                             });
 
                                     });
@@ -191,7 +190,6 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                         .catch(err => {
                             console.error('get beachbody users');
                             console.error(err.message);
-                            throw err;
                         });
                     beachBodyUsers.push(getBeachBodyUser);
                 }
@@ -226,13 +224,13 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                     return sendEmail(apiToken, user);
                                 })
                                 .catch(err => {
-                                    console.error('send email');
+                                    console.error('set rank updated');
                                     console.error(err.message);
-                                    throw err;
                                 });
                         })
                         .catch(err => {
-                            throw err;
+                            console.error('update beach body user in word press');
+                            console.error(err.message);
                         });
                     updateRank.push(updateR);
                 }
@@ -246,8 +244,6 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 updatedRanks
             }
         } catch (err) {
-            console.error('whole thing');
-            console.error(err.message);
-            throw err;
+            console.error('whole thing', err.message);
         }
     });
