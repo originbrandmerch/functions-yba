@@ -127,6 +127,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                         return data[0];
                                     })
                                     .catch(err => {
+                                        console.error('Update Word Press ID');
+                                        console.error(err);
                                         throw err;
                                     });
                             } else {
@@ -172,6 +174,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                                         return sendEmail(apiToken, user, password);
                                                     })
                                                     .catch(err => {
+                                                        console.error('set rank updated');
+                                                        console.error(err);
                                                         throw err;
                                                     });
                                             })
@@ -183,6 +187,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                             }
                         })
                         .catch(err => {
+                            console.error('get beachbody users');
+                            console.error(err);
                             throw err;
                         });
                     beachBodyUsers.push(getBeachBodyUser);
@@ -218,6 +224,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                                     return sendEmail(apiToken, user);
                                 })
                                 .catch(err => {
+                                    console.error('send email');
+                                    console.error(err);
                                     throw err;
                                 });
                         })
@@ -236,6 +244,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 updatedRanks
             }
         } catch (err) {
+            console.error('whole thing');
+            console.error(err);
             throw err;
         }
     });
