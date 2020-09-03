@@ -91,6 +91,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             })
                 .then(results => results.data)
                 .catch(err => {
+                    console.error('new rank advancements');
+                    console.error(err);
                     throw err;
                 });
 
