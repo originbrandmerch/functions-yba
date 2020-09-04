@@ -92,7 +92,7 @@ const updateEmailSent = (apiToken, user) => {
         .catch(err => {
             console.error('Error updating email sent', err.message);
         })
-}
+};
 
 const updateRankUpdated = (apiToken, user) => {
     return axios({
@@ -111,7 +111,7 @@ const updateRankUpdated = (apiToken, user) => {
         });
 };
 
-const createBeachBodyUser = (user, password, auth) => {
+const createBeachBodyUser = (user, password, auth, apiToken) => {
     return axios.post(`https://beachbodyrecognition.com/wp-json/wp/v2/users`, {
         username: user.email,
         first_name: user.firstName,
@@ -125,6 +125,7 @@ const createBeachBodyUser = (user, password, auth) => {
         }
     })
         .then(({data}) => {
+            updateRankUpdated(apiToken, user);
             return data.id;
         })
         .catch(err => {
@@ -208,9 +209,11 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 if (!user.wordPressId) {
                     let password = randomPassword(10);
                     // eslint-disable-next-line no-await-in-loop
-                    user.wordPressId = await createBeachBodyUser(user, password, auth);
-                    // eslint-disable-next-line no-await-in-loop
-                    await sendEmail(apiToken, user, password, emails);
+                    user.wordPressId = await createBeachBodyUser(user, password, auth, apiToken);
+                    if (user.wordPressId) {
+                        // eslint-disable-next-line no-await-in-loop
+                        await sendEmail(apiToken, user, password, emails);
+                    }
                 } else {
                     // eslint-disable-next-line no-await-in-loop
                     await updateBeachBodyUser(user, auth, apiToken, emails);
