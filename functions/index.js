@@ -39,7 +39,7 @@ const sendEmail = (apiToken, user, password, emails) => {
     const headers = formData.getHeaders();
     headers.Authorization = `Basic ${mailAuth.toString('base64')}`;
 
-    axios({
+    return axios({
         method: 'post',
         url: 'https://api.mailgun.net/v3/mg.beachbodyrecognition.com/messages',
         headers,
@@ -125,7 +125,7 @@ const createBeachBodyUser = (user, password, auth) => {
         }
     })
         .then(({data}) => {
-            return data[0].id;
+            return data.id;
         })
         .catch(err => {
             console.error('Error updating beach body user', err.message);
@@ -139,7 +139,11 @@ const searchForBeachBodyUser = (user, auth) => {
         }
     })
         .then(({data}) => {
-            return data[0].id;
+            if (data.length) {
+                return data[0].id;
+            } else {
+                return null;
+            }
         })
         .catch(err => {
             console.error('Error searching for beach body user', err.message);
@@ -205,6 +209,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                     let password = randomPassword(10);
                     // eslint-disable-next-line no-await-in-loop
                     user.wordPressId = await createBeachBodyUser(user, password, auth);
+                    // eslint-disable-next-line no-await-in-loop
+                    await sendEmail(apiToken, user, password, emails);
                 } else {
                     // eslint-disable-next-line no-await-in-loop
                     await updateBeachBodyUser(user, auth, apiToken, emails);
@@ -219,3 +225,51 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             console.error('whole thing', err.message);
         }
     });
+
+exports.test = functions.https.onRequest(async (req, res) => {
+    try {
+        let apiToken = await admin.auth().createCustomToken(functions.config().fire.uid)
+            .catch(err => {
+                throw err;
+            });
+        let users = await axios.get(`${url}/newRankAdvancements`, {
+            headers: {
+                apiToken
+            }
+        })
+            .then(results => results.data)
+            .catch(err => {
+                console.error('new rank advancements');
+                console.error(err.message);
+            });
+
+        const username = functions.config().beachbody.username;
+        const password = functions.config().beachbody.password;
+        const auth = Buffer.from(username + ":" + password).toString('base64');
+        const emails = await getEmails(apiToken);
+
+        for (let user of users) {
+            // eslint-disable-next-line no-await-in-loop
+            user.wordPressId = await searchForBeachBodyUser(user, auth);
+            if (!user.wordPressId) {
+                let password = randomPassword(10);
+                // eslint-disable-next-line no-await-in-loop
+                user.wordPressId = await createBeachBodyUser(user, password, auth);
+                // eslint-disable-next-line no-await-in-loop
+                await updateRankUpdated(apiToken, user);
+                // eslint-disable-next-line no-await-in-loop
+                await sendEmail(apiToken, user, password, emails);
+            } else {
+                // eslint-disable-next-line no-await-in-loop
+                await updateBeachBodyUser(user, auth, apiToken, emails);
+                // eslint-disable-next-line no-await-in-loop
+                await updateRankUpdated(apiToken, user);
+            }
+            // eslint-disable-next-line no-await-in-loop
+            await updateWordPressId(apiToken, user);
+        }
+        return users;
+    } catch (err) {
+        console.error('whole thing', err.message);
+    }
+});
