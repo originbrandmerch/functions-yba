@@ -129,7 +129,8 @@ const createBeachBodyUser = (user, password, auth, apiToken) => {
             return data.id;
         })
         .catch(err => {
-            console.error('Error updating beach body user', err.message);
+            console.error(err);
+            console.error('Error creating beach body user', err.message);
         });
 };
 
@@ -163,7 +164,8 @@ const updateBeachBodyUser = (user, auth, apiToken, emails) => {
             return sendEmail(apiToken, user, null, emails);
         })
         .catch(err => {
-            console.error('Error creating beach body user', err.message);
+            console.error(err);
+            console.error('Error updating beach body user', err.message);
         })
 };
 
@@ -226,5 +228,6 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             return users;
         } catch (err) {
             console.error('whole thing', err.message);
+            return err;
         }
     });
