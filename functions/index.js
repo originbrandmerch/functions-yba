@@ -21,6 +21,29 @@ const randomPassword = length => {
 const url = 'https://yba-shirts.uc.r.appspot.com/api';
 // const url = 'http://localhost:3001/api';
 
+const processUser = async (user, auth, apiToken, emails) => {
+    console.log('Processing user ', user.firstName, ' at ', Date.now());
+    // eslint-disable-next-line no-await-in-loop
+    user.wordPressId = await searchForBeachBodyUser(user, auth);
+    if (!user.wordPressId) {
+        let password = randomPassword(10);
+        // eslint-disable-next-line no-await-in-loop
+        user.wordPressId = await createBeachBodyUser(user, password, auth, apiToken);
+        if (user.wordPressId) {
+            // eslint-disable-next-line no-await-in-loop
+            await sendEmail(apiToken, user, password, emails);
+        }
+    } else {
+        // eslint-disable-next-line no-await-in-loop
+        await updateBeachBodyUser(user, auth, apiToken, emails);
+        // eslint-disable-next-line no-await-in-loop
+        await updateRankUpdated(apiToken, user);
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await updateWordPressId(apiToken, user);
+    return
+}
+
 const sendEmail = (apiToken, user, password, emails) => {
     const mailGunApiKey = functions.config().mailgun.key;
     const mailAuth = Buffer.from(`api:${mailGunApiKey}`);
@@ -211,26 +234,8 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 console.log(`Retrieved ${emails.length} emails`, Date.now());
             }
 
-            for (let user of users) {
-                // eslint-disable-next-line no-await-in-loop
-                user.wordPressId = await searchForBeachBodyUser(user, auth);
-                if (!user.wordPressId) {
-                    let password = randomPassword(10);
-                    // eslint-disable-next-line no-await-in-loop
-                    user.wordPressId = await createBeachBodyUser(user, password, auth, apiToken);
-                    if (user.wordPressId) {
-                        // eslint-disable-next-line no-await-in-loop
-                        await sendEmail(apiToken, user, password, emails);
-                    }
-                } else {
-                    // eslint-disable-next-line no-await-in-loop
-                    await updateBeachBodyUser(user, auth, apiToken, emails);
-                    // eslint-disable-next-line no-await-in-loop
-                    await updateRankUpdated(apiToken, user);
-                }
-                // eslint-disable-next-line no-await-in-loop
-                await updateWordPressId(apiToken, user);
-            }
+            await Promise.allSettled(users.map(user => processUser((user, auth, apiToken, emails))))
+
             console.log('Returning users', Date.now());
             return users;
         } catch (err) {
