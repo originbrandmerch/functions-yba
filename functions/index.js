@@ -185,6 +185,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
     .timeZone('America/Denver')
     .onRun(async context => {
         try {
+            console.log('Starting execution', Date.now());
             let apiToken = await admin.auth().createCustomToken(functions.config().fire.uid)
                 .catch(err => {
                     throw err;
@@ -199,11 +200,16 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                     console.error('new rank advancements');
                     console.error(err.message);
                 });
-
+            if (users) {
+                console.log(`Retrieved ${users.length} users`, Date.now());
+            }
             const username = functions.config().beachbody.username;
             const password = functions.config().beachbody.password;
             const auth = Buffer.from(username + ":" + password).toString('base64');
             const emails = await getEmails(apiToken);
+            if (emails) {
+                console.log(`Retrieved ${emails.length} emails`, Date.now());
+            }
 
             for (let user of users) {
                 // eslint-disable-next-line no-await-in-loop
@@ -225,6 +231,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 // eslint-disable-next-line no-await-in-loop
                 await updateWordPressId(apiToken, user);
             }
+            console.log('Returning users', Date.now());
             return users;
         } catch (err) {
             console.error('whole thing', err.message);
