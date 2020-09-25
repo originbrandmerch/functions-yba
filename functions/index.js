@@ -42,7 +42,7 @@ const processUser = async (user, auth, apiToken, emails) => {
     // eslint-disable-next-line no-await-in-loop
     await updateWordPressId(apiToken, user);
     return
-}
+};
 
 const sendEmail = (apiToken, user, password, emails) => {
     const mailGunApiKey = functions.config().mailgun.key;
@@ -234,7 +234,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 console.log(`Retrieved ${emails.length} emails`, Date.now());
             }
 
-            await Promise.allSettled(users.map(user => processUser((user, auth, apiToken, emails))))
+            await Promise.allSettled(users.map(user => processUser(user, auth, apiToken, emails)))
 
             console.log('Returning users', Date.now());
             return users;
