@@ -22,7 +22,7 @@ const url = 'https://yba-shirts.uc.r.appspot.com/api';
 // const url = 'http://localhost:3001/api';
 
 const processUser = async (user, auth, apiToken, emails) => {
-    console.log('Processing user ', user.firstName, ' at ', Date.now());
+    console.log('Processing user ', user, ' at ', Date.now());
     // eslint-disable-next-line no-await-in-loop
     user.wordPressId = await searchForBeachBodyUser(user, auth);
     if (!user.wordPressId) {
