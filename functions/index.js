@@ -152,7 +152,6 @@ const createBeachBodyUser = (user, password, auth, apiToken) => {
             return data.id;
         })
         .catch(err => {
-            console.error(err);
             console.error('Error creating beach body user', err.message);
         });
 };
@@ -187,7 +186,6 @@ const updateBeachBodyUser = (user, auth, apiToken, emails) => {
             return sendEmail(apiToken, user, null, emails);
         })
         .catch(err => {
-            console.error(err);
             console.error('Error updating beach body user', err.message);
         })
 };
@@ -234,7 +232,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
                 console.log(`Retrieved ${emails.length} emails`, Date.now());
             }
 
-            await Promise.allSettled(users.map(user => processUser(user, auth, apiToken, emails)))
+            await Promise.allSettled(users.map(user => processUser(user, auth, apiToken, emails)));
 
             console.log('Returning users', Date.now());
             return users;
