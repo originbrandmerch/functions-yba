@@ -19,7 +19,6 @@ const randomPassword = length => {
 };
 
 const url = 'https://yba-shirts.uc.r.appspot.com/api';
-// const url = 'http://localhost:3001/api';
 
 const processUser = async (user, auth, apiToken, emails) => {
     console.log('Processing user ', user, ' at ', Date.now());
@@ -78,8 +77,7 @@ const sendEmail = (apiToken, user, password, emails) => {
             }
         })
         .catch(err => {
-            console.error('get Beach body email');
-            console.error(err.message);
+            createError(user, err, 'get Beach body email');
         });
 };
 
@@ -96,7 +94,7 @@ const updateWordPressId = (apiToken, user) => {
         }
     })
         .catch(err => {
-            console.error('Error updating word press id', err.message);
+            createError(user, err, 'Error updating word press id');
         });
 };
 
@@ -113,7 +111,7 @@ const updateEmailSent = (apiToken, user) => {
         }
     })
         .catch(err => {
-            console.error('Error updating email sent', err.message);
+            createError(user, err, 'Error updating email sent');
         })
 };
 
@@ -130,7 +128,7 @@ const updateRankUpdated = (apiToken, user) => {
         }
     })
         .catch(err => {
-            console.error('Error updating rank', err.message);
+            createError(user, err, 'Error updating rank');
         });
 };
 
@@ -152,8 +150,24 @@ const createBeachBodyUser = (user, password, auth, apiToken) => {
             return data.id;
         })
         .catch(err => {
-            console.error('Error creating beach body user', err.message);
+            createError(user, err, 'Error creating beach body user');
         });
+};
+
+const createError = (user, err, ourError) => {
+    axios.post(`${url}/createError`, {
+        insertId: user.id,
+        uploadId: user.uploadId,
+        errMessage: err.response.data.message
+    })
+        .then(() => {
+            const error = `${ourError}: ${err.message}`;
+            console.error(error);
+            return error;
+        })
+        .catch(err => {
+            console.error('sending error to database didn\'t work: ', err.message);
+        })
 };
 
 const searchForBeachBodyUser = (user, auth) => {
@@ -170,7 +184,7 @@ const searchForBeachBodyUser = (user, auth) => {
             }
         })
         .catch(err => {
-            console.error('Error searching for beach body user', err.message);
+            createError(user, err, 'Error searching for beach body user');
         })
 };
 
@@ -186,7 +200,7 @@ const updateBeachBodyUser = (user, auth, apiToken, emails) => {
             return sendEmail(apiToken, user, null, emails);
         })
         .catch(err => {
-            console.error('Error updating beach body user', err.message);
+            createError(user, err, 'Error updating beach body user');
         })
 };
 
