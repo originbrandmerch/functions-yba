@@ -19,6 +19,7 @@ const randomPassword = length => {
 };
 
 const url = 'https://yba-shirts.uc.r.appspot.com/api';
+const devURL = 'http://localhost:3000/api';
 
 const processUser = async (user, auth, apiToken, emails) => {
     // eslint-disable-next-line no-await-in-loop
@@ -154,6 +155,16 @@ const createBeachBodyUser = (user, password, auth, apiToken) => {
 };
 
 const createError = (apiToken, user, err, ourError) => {
+    let errMessage;
+    if(err.response){
+        if(err.response.data && err.response.data.message){
+            errMessage = err.response.data.message;
+        } else {
+            errMessage = JSON.stringify(err);
+        }
+    } else {
+        errMessage = JSON.stringify(err);
+    }
     axios({
         method: 'post',
         url: `${url}/createError`,
@@ -163,11 +174,11 @@ const createError = (apiToken, user, err, ourError) => {
         data: {
             insertId: user.id,
             uploadId: user.uploadId,
-            errMessage: err.response.data.message
+            errMessage
         }
     })
         .then(() => {
-            const error = `${ourError}: ${err.message}`;
+            const error = `${ourError}: ${errMessage}`;
             console.error(error);
             return error;
         })
