@@ -18,8 +18,9 @@ const randomPassword = length => {
     return pass;
 };
 
-const url = 'https://yba-shirts.uc.r.appspot.com/api';
-const devURL = 'http://localhost:3000/api';
+let url = 'https://yba-shirts.uc.r.appspot.com/api';
+let devURL = 'http://localhost:3001/api';
+url = devURL;
 
 const processUser = async (user, auth, apiToken, emails) => {
     // eslint-disable-next-line no-await-in-loop
@@ -272,3 +273,43 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             return err;
         }
     });
+
+exports.test = functions.https.onRequest(async (req,res) => {
+    try {
+        console.log('Starting execution', Date.now());
+        let apiToken = await admin.auth().createCustomToken(functions.config().fire.uid)
+            .catch(err => {
+                throw err;
+            });
+        let users = await axios.get(`${url}/newRankAdvancements`, {
+            headers: {
+                apiToken
+            }
+        })
+            .then(results => results.data)
+            .catch(err => {
+                console.error('new rank advancements');
+                console.error(err.message);
+            });
+        if (users) {
+            console.log(`Retrieved ${users.length} users`, Date.now());
+        }
+        const username = functions.config().beachbody.username;
+        const password = functions.config().beachbody.password;
+        const auth = Buffer.from(username + ":" + password).toString('base64');
+        const emails = await getEmails(apiToken);
+        if (emails) {
+            console.log(`Retrieved ${emails.length} emails`, Date.now());
+        }
+
+        await Promise.all(users.map(user => processUser(user, auth, apiToken, emails)));
+
+        console.log('Returning users', Date.now());
+        res.send(users);
+        return users;
+    } catch (err) {
+        console.error('whole thing', err.message);
+        res.status(500).send(err);
+        return err;
+    }
+});
