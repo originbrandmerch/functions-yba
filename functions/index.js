@@ -20,7 +20,6 @@ const randomPassword = length => {
 
 let url = 'https://yba-shirts.uc.r.appspot.com/api';
 let devURL = 'http://localhost:3001/api';
-url = devURL;
 
 const processUser = async (user, auth, apiToken, emails) => {
     // eslint-disable-next-line no-await-in-loop
