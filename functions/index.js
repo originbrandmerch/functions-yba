@@ -22,23 +22,23 @@ let url = 'https://yba-shirts.uc.r.appspot.com/api';
 let devURL = 'http://localhost:3001/api';
 
 const processUser = async (user, auth, apiToken, emails) => {
-    // eslint-disable-next-line no-await-in-loop
-    user.wordPressId = await searchForBeachBodyUser(user, auth, apiToken);
+    try {
+        user.wordPressId = await searchForBeachBodyUser(user, auth, apiToken);
+    } catch (err) {
+        createError(apiToken, user, err, 'Error searching for user');
+        throw err;
+    }
+
     if (!user.wordPressId) {
         let password = randomPassword(10);
-        // eslint-disable-next-line no-await-in-loop
         user.wordPressId = await createBeachBodyUser(user, password, auth, apiToken);
         if (user.wordPressId) {
-            // eslint-disable-next-line no-await-in-loop
             await sendEmail(apiToken, user, password, emails);
         }
     } else {
-        // eslint-disable-next-line no-await-in-loop
         await updateBeachBodyUser(user, auth, apiToken, emails);
-        // eslint-disable-next-line no-await-in-loop
         await updateRankUpdated(apiToken, user);
     }
-    // eslint-disable-next-line no-await-in-loop
     await updateWordPressId(apiToken, user);
     return
 };
@@ -155,16 +155,17 @@ const createBeachBodyUser = (user, password, auth, apiToken) => {
 };
 
 const createError = (apiToken, user, err, ourError) => {
-    let errMessage;
-    if(err.response){
-        if(err.response.data && err.response.data.message){
-            errMessage = err.response.data.message;
+    let error;
+    if (err.response) {
+        if (err.response.data && err.response.data.message) {
+            error = err.response.data.message;
         } else {
-            errMessage = JSON.stringify(err);
+            error = JSON.stringify(err);
         }
     } else {
-        errMessage = JSON.stringify(err);
+        error = JSON.stringify(err);
     }
+    const errMessage = `${ourError}: ${error}`;
     axios({
         method: 'post',
         url: `${url}/createError`,
@@ -178,9 +179,8 @@ const createError = (apiToken, user, err, ourError) => {
         }
     })
         .then(() => {
-            const error = `${ourError}: ${errMessage}`;
-            console.error(error);
-            return error;
+            console.error(errMessage);
+            return errMessage;
         })
         .catch(err => {
             console.error('sending error to database didn\'t work: ', err.message);
@@ -201,7 +201,7 @@ const searchForBeachBodyUser = (user, auth, apiToken) => {
             }
         })
         .catch(err => {
-            createError(apiToken, user, err, 'Error searching for beach body user');
+            throw err;
         })
 };
 
@@ -272,3 +272,43 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             return err;
         }
     });
+
+exports.test = functions.https.onRequest(async (req, res) => {
+    try {
+        console.log('Starting execution', Date.now());
+        let apiToken = await admin.auth().createCustomToken(functions.config().fire.uid)
+            .catch(err => {
+                throw err;
+            });
+        let users = await axios.get(`${url}/newRankAdvancements`, {
+            headers: {
+                apiToken
+            }
+        })
+            .then(results => results.data)
+            .catch(err => {
+                console.error('new rank advancements');
+                console.error(err.message);
+            });
+        if (users) {
+            console.log(`Retrieved ${users.length} users`, Date.now());
+        }
+        const username = functions.config().beachbody.username;
+        const password = functions.config().beachbody.password;
+        const auth = Buffer.from(username + ":" + password).toString('base64');
+        const emails = await getEmails(apiToken);
+        if (emails) {
+            console.log(`Retrieved ${emails.length} emails`, Date.now());
+        }
+
+        await Promise.all(users.map(user => processUser(user, auth, apiToken, emails)));
+
+        console.log('Returning users', Date.now());
+        res.send(users);
+        return users;
+    } catch (err) {
+        console.error('whole thing', err.message);
+        res.status(500).send(err);
+        return err;
+    }
+});
