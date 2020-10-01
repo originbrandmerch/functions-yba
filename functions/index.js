@@ -21,9 +21,8 @@ const randomPassword = length => {
 const url = 'https://yba-shirts.uc.r.appspot.com/api';
 
 const processUser = async (user, auth, apiToken, emails) => {
-    console.log('Processing user ', user, ' at ', Date.now());
     // eslint-disable-next-line no-await-in-loop
-    user.wordPressId = await searchForBeachBodyUser(user, auth);
+    user.wordPressId = await searchForBeachBodyUser(user, auth, apiToken);
     if (!user.wordPressId) {
         let password = randomPassword(10);
         // eslint-disable-next-line no-await-in-loop
@@ -77,7 +76,7 @@ const sendEmail = (apiToken, user, password, emails) => {
             }
         })
         .catch(err => {
-            createError(user, err, 'get Beach body email');
+            createError(apiToken, user, err, 'get Beach body email');
         });
 };
 
@@ -94,7 +93,7 @@ const updateWordPressId = (apiToken, user) => {
         }
     })
         .catch(err => {
-            createError(user, err, 'Error updating word press id');
+            createError(apiToken, user, err, 'Error updating word press id');
         });
 };
 
@@ -111,7 +110,7 @@ const updateEmailSent = (apiToken, user) => {
         }
     })
         .catch(err => {
-            createError(user, err, 'Error updating email sent');
+            createError(apiToken, user, err, 'Error updating email sent');
         })
 };
 
@@ -128,7 +127,7 @@ const updateRankUpdated = (apiToken, user) => {
         }
     })
         .catch(err => {
-            createError(user, err, 'Error updating rank');
+            createError(apiToken, user, err, 'Error updating rank');
         });
 };
 
@@ -150,15 +149,22 @@ const createBeachBodyUser = (user, password, auth, apiToken) => {
             return data.id;
         })
         .catch(err => {
-            createError(user, err, 'Error creating beach body user');
+            createError(apiToken, user, err, 'Error creating beach body user');
         });
 };
 
-const createError = (user, err, ourError) => {
-    axios.post(`${url}/createError`, {
-        insertId: user.id,
-        uploadId: user.uploadId,
-        errMessage: err.response.data.message
+const createError = (apiToken, user, err, ourError) => {
+    axios({
+        method: 'post',
+        url: `${url}/createError`,
+        headers: {
+            apiToken
+        },
+        data: {
+            insertId: user.id,
+            uploadId: user.uploadId,
+            errMessage: err.response.data.message
+        }
     })
         .then(() => {
             const error = `${ourError}: ${err.message}`;
@@ -170,7 +176,7 @@ const createError = (user, err, ourError) => {
         })
 };
 
-const searchForBeachBodyUser = (user, auth) => {
+const searchForBeachBodyUser = (user, auth, apiToken) => {
     return axios.get(`https://beachbodyrecognition.com/wp-json/wp/v2/users?search=${user.email}`, {
         headers: {
             'Authorization': `Basic ${auth.toString('base64')}`
@@ -184,7 +190,7 @@ const searchForBeachBodyUser = (user, auth) => {
             }
         })
         .catch(err => {
-            createError(user, err, 'Error searching for beach body user');
+            createError(apiToken, user, err, 'Error searching for beach body user');
         })
 };
 
@@ -200,7 +206,7 @@ const updateBeachBodyUser = (user, auth, apiToken, emails) => {
             return sendEmail(apiToken, user, null, emails);
         })
         .catch(err => {
-            createError(user, err, 'Error updating beach body user');
+            createError(apiToken, user, err, 'Error updating beach body user');
         })
 };
 
