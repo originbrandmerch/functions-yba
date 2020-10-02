@@ -37,9 +37,10 @@ const processUser = async (user, auth, apiToken, emails) => {
         }
     } else {
         await updateBeachBodyUser(user, auth, apiToken, emails);
-        await updateRankUpdated(apiToken, user);
     }
-    await updateWordPressId(apiToken, user);
+    if (user.wordPressId) {
+        await updateWordPressId(apiToken, user);
+    }
     return
 };
 
@@ -214,6 +215,7 @@ const updateBeachBodyUser = (user, auth, apiToken, emails) => {
         }
     })
         .then(() => {
+            updateRankUpdated(apiToken, user);
             return sendEmail(apiToken, user, null, emails);
         })
         .catch(err => {
