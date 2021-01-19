@@ -280,7 +280,7 @@ exports.shipmentsUpdater = functions.runWith({memory: '2GB', timeoutSeconds: 540
     .timeZone('America/Denver')
     .onRun(async context => {
         try {
-            getShipments();
+            return getShipments();
         } catch (err) {
             console.error('error getting shipments', err.message);
             return err;
