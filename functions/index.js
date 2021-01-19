@@ -236,7 +236,7 @@ const getEmails = (apiToken) => {
         })
 };
 
-exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('*/10 8-20 * * *')
+exports.rankAdvancement = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('*/10 8-20 * * *')
     .timeZone('America/Denver')
     .onRun(async context => {
         try {
@@ -276,7 +276,7 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
         }
     });
 
-exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('every 10 minutes')
+exports.shipmentsUpdater = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('every 10 minutes')
     .timeZone('America/Denver')
     .onRun(async context => {
         try {
