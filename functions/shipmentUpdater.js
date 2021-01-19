@@ -19,7 +19,7 @@ exports.getShipments = () => {
     }})
         .then(results => {
             console.log('successfully got shipments');
-            // console.log(results)
+            console.log(results)
         })
         .catch((err) => {
             console.log('errored out')
