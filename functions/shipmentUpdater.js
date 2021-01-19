@@ -15,6 +15,12 @@ exports.getShipments = () => {
         headers: {
             Authorization: `Bearer ${apiKey}`,
       }})
-        .then(results => console.log(results))
-        .catch((err) => console.error(err));
+        .then(results => {
+            console.log('successfully got shipments');
+            // console.log(results)
+        })
+        .catch((err) => {
+            console.log('errored out')
+            // console.error(err)
+        });
 }
