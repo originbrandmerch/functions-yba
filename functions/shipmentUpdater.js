@@ -1,3 +1,5 @@
+/* eslint-disable handle-callback-err */
+/* eslint-disable promise/always-return */
 const axios = require('axios');
 const functions = require('firebase-functions');
 
@@ -14,7 +16,7 @@ exports.getShipments = () => {
         url: `${bfsShipBaseURL}/customers/${customerID}/shipments?minBookNumber=${currentMinBookNumber}&limit=${resultLimit}`,
         headers: {
             Authorization: `Bearer ${apiKey}`,
-      }})
+    }})
         .then(results => {
             console.log('successfully got shipments');
             // console.log(results)
