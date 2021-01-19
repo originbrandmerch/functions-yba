@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const FormData = require('form-data');
 const axios = require('axios');
 const admin = require("firebase-admin");
+const { getShipments } = require('./shipmentUpdater');
 
 admin.initializeApp({
     credential: admin.credential.cert(functions.config().firejson),
@@ -271,6 +272,17 @@ exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 54
             return users;
         } catch (err) {
             console.error('whole thing', err.message);
+            return err;
+        }
+    });
+
+exports.scheduledFunction = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('every 10 minutes')
+    .timeZone('America/Denver')
+    .onRun(async context => {
+        try {
+            getShipments();
+        } catch (err) {
+            console.error('error getting shipments', err.message);
             return err;
         }
     });
