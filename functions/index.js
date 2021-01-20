@@ -2,7 +2,6 @@ const functions = require('firebase-functions');
 const FormData = require('form-data');
 const axios = require('axios');
 const admin = require("firebase-admin");
-const { getShipments } = require('./shipmentUpdater');
 
 admin.initializeApp({
     credential: admin.credential.cert(functions.config().firejson),
