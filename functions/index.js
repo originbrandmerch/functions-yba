@@ -18,7 +18,7 @@ const randomPassword = length => {
     return pass;
 };
 
-let url = 'https://yba-shirts.uc.r.appspot.com/api';
+let url = 'https://yba-live-v5py6hh2tq-uc.a.run.app/api';
 let devURL = 'http://localhost:3001/api';
 
 const processUser = async (user, auth, apiToken, emails) => {
