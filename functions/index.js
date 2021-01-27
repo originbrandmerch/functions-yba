@@ -235,6 +235,10 @@ const getEmails = (apiToken) => {
         })
 };
 
+exports.createPassword = functions.https.onRequest((req, res) => {
+    res.send(randomPassword(10));
+})
+
 exports.rankAdvancement = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('*/10 8-20 * * *')
     .timeZone('America/Denver')
     .onRun(async context => {
