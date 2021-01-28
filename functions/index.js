@@ -2,6 +2,10 @@ const functions = require('firebase-functions');
 const FormData = require('form-data');
 const axios = require('axios');
 const admin = require("firebase-admin");
+const express = require('express');
+const cors = require('cors')
+const router = express();
+router.use(cors({origin: true}));
 
 admin.initializeApp({
     credential: admin.credential.cert(functions.config().firejson),
@@ -43,6 +47,7 @@ const processUser = async (user, auth, apiToken, emails) => {
     }
     return
 };
+
 
 const sendEmail = (apiToken, user, password, emails) => {
     const mailGunApiKey = functions.config().mailgun.key;
@@ -235,9 +240,137 @@ const getEmails = (apiToken) => {
         })
 };
 
+router.post('/sendEmail', ({body}, res) => {
+    const {user, password} = body;
+    const mailGunApiKey = functions.config().mailgun.key;
+    const mailAuth = Buffer.from(`api:${mailGunApiKey}`);
+    const emails =
+        [
+            {
+                subject: 'Congratulations on your new rank advancement to 1 Star Diamond Coach!',
+                template: 'one-star-diamond-coach',
+                roleId: 4
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to Emerald Coach!',
+                template: 'emerald-coach',
+                roleId: 1
+            },
+            {subject: 'Congratulations on your new rank advancement to Ruby Coach!', template: 'ruby-coach', roleId: 2},
+            {
+                subject: 'Congratulations on your new rank advancement to Diamond Coach!',
+                template: 'diamond-coach',
+                roleId: 3
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 2 Star Diamond Coach!',
+                template: 'two-star-diamond-coach',
+                roleId: 5
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 3 Star Diamond Coach!',
+                template: 'three-star-diamond-coach',
+                roleId: 6
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 4 Star Diamond Coach!',
+                template: 'four-star-diamond-coach',
+                roleId: 7
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 5 Star Diamond Coach!',
+                template: 'five-star-diamond-coach',
+                roleId: 8
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 6 Star Diamond Coach!',
+                template: 'six-star-diamond-coach',
+                roleId: 9
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 7 Star Diamond Coach!',
+                template: 'seven-star-diamond-coach',
+                roleId: 10
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 8 Star Diamond Coach!',
+                template: 'eight-star-diamond-coach',
+                roleId: 11
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 9 Star Diamond Coach!',
+                template: 'nine-star-diamond-coach',
+                roleId: 12
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 10 Star Diamond Coach!',
+                template: 'ten-star-diamond-coach',
+                roleId: 13
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 11 Star Diamond Coach!',
+                template: 'eleven-star-diamond-coach',
+                roleId: 14
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 12 Star Diamond Coach!',
+                template: 'twelve-star-diamond-coach',
+                roleId: 15
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 13 Star Diamond Coach!',
+                template: 'thirteen-star-diamond-coach',
+                roleId: 16
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 14 Star Diamond Coach!',
+                template: 'fourteen-star-diamond-coach',
+                roleId: 17
+            },
+            {
+                subject: 'Congratulations on your new rank advancement to 15 Star Diamond Coach!',
+                template: 'fifteen-star-diamond-coach',
+                roleId: 18
+            },
+        ]
+
+    let {subject, template} = emails.find(email => email.roleId === user.roleId);
+    const formData = new FormData();
+    formData.append('from', 'Beachbody Recognition <noreply@beachbodyrecognition.com>');
+    formData.append('to', user.email);
+    formData.append('subject', subject);
+    formData.append('template', template);
+    formData.append('h:X-Mailgun-Variables', JSON.stringify({
+        firstName: user.firstName,
+        password,
+        email: user.email
+    }));
+
+    const headers = formData.getHeaders();
+    headers.Authorization = `Basic ${mailAuth.toString('base64')}`;
+
+    axios({
+        method: 'post',
+        url: 'https://api.mailgun.net/v3/mg.beachbodyrecognition.com/messages',
+        headers,
+        data: formData
+    })
+        .then(response => {
+            // eslint-disable-next-line promise/always-return
+            if (response.data && response.data.message && response.data.message.includes('Queued')) {
+                res.send(response.data);
+            } else {
+                res.status(500).send(response.data);
+            }
+        })
+        .catch(err => {
+            res.status(500).send(err);
+        });
+});
+
 exports.createPassword = functions.https.onRequest((req, res) => {
     res.send(randomPassword(10));
-})
+});
 
 exports.rankAdvancement = functions.runWith({memory: '2GB', timeoutSeconds: 540}).pubsub.schedule('*/10 8-20 * * *')
     .timeZone('America/Denver')
@@ -278,3 +411,5 @@ exports.rankAdvancement = functions.runWith({memory: '2GB', timeoutSeconds: 540}
             return err;
         }
     });
+
+exports.router = functions.https.onRequest(router);
