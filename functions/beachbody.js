@@ -5,7 +5,7 @@ const functions = require('firebase-functions');
 const FormData = require('form-data');
 const { randomPassword, createError } = require('./utils');
 const { url } = require('./constants');
-const admin = require('./admin');
+const { admin } = require('./admin');
 
 const updateEmailSent = (apiToken, user) => {
   return axios({

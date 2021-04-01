@@ -6,4 +6,4 @@ admin.initializeApp({
   databaseURL: 'https://yba-shirts.firebaseio.com',
 });
 
-export default admin;
+exports.admin = admin;
