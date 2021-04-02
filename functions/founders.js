@@ -8,9 +8,10 @@ exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((mess
   return axios({
     method: 'POST',
     url: 'https://api-test.teamworkathletic.com/order_items',
-    data,
+    data: data.body,
   })
     .then(async ({ data: responseData }) => {
+      console.log(JSON.stringify(responseData));
       const res = await pubsub.topic('founders_response').publish(Buffer.from(JSON.stringify({ id, data: responseData })));
       console.log(JSON.stringify({ res, id, data: responseData }));
       return responseData;

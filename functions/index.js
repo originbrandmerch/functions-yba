@@ -6,7 +6,8 @@ const router = express();
 router.use(cors({ origin: true }));
 const { randomPassword } = require('./utils');
 const { generatePDF } = require('./nes');
-const { helloPubSub, deltaHook } = require('./delta');
+const { deltaOrder, deltaHook } = require('./delta');
+const { foundersOrder } = require('./founders');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
 
 // routes
@@ -16,7 +17,9 @@ router.post('/hooks/delta', deltaHook);
 exports.createPassword = functions.https.onRequest((req, res) => {
   res.send(randomPassword(10));
 });
+
+exports.deltaOrder = deltaOrder;
 exports.generatePDF = generatePDF;
+exports.foundersOrder = foundersOrder;
 exports.rankAdvancement = rankAdvancement;
-exports.helloPubSub = helloPubSub;
 exports.router = functions.https.onRequest(router);
