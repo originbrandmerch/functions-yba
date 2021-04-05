@@ -1,5 +1,5 @@
 steps:
-  - name: 'gcr.io/cloud-builders/npm:node-14.10.0'
+  - name: 'gcr.io/cloud-builders/npm'
     dir: 'functions'
     args: ['install']
 
