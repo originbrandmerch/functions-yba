@@ -18,10 +18,6 @@ exports.deltaHook = (req, res) => {
 
 exports.deltaOrder = functions.pubsub.topic('delta_order').onPublish((message) => {
   const { jobId, jobTypeId, body } = message.json;
-  console.log(typeof body);
-  console.log(body);
-  console.log(typeof body.data);
-  console.log(body.data);
   const jsonBody = JSON.parse(body);
   return axios({
     method: 'POST',
@@ -32,7 +28,7 @@ exports.deltaOrder = functions.pubsub.topic('delta_order').onPublish((message) =
     data: jsonBody.data,
   })
     .then(async ({ data: responseData }) => {
-      const res = await pubsub.topic('delta_response').publish(Buffer.from(JSON.stringify({ jobId, jobTypeId, data: responseData })));
+      const res = await pubsub.topic('delta_response').publish(Buffer.from(JSON.stringify({ jobId, jobTypeId, body: responseData })));
       console.log({ res, jobId, data: responseData });
       return responseData;
     })
