@@ -17,9 +17,11 @@ exports.deltaHook = (req, res) => {
 };
 
 exports.deltaOrder = functions.pubsub.topic('delta_order').onPublish((message) => {
-  console.log(typeof message);
-  console.log(message.json);
   const { jobId, jobTypeId, body } = message.json;
+  console.log(typeof body);
+  console.log(body);
+  console.log(typeof body.data);
+  console.log(body.data);
   return axios({
     method: 'POST',
     url: 'https://sandbox.dtg2goportal.com/api/v1/workorders',
