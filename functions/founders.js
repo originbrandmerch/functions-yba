@@ -3,17 +3,16 @@ const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
 
 exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((message) => {
-  const { id, data } = message.json;
-  console.log(id, data);
+  const { jobId, jobTypeId, body } = message.json;
   return axios({
     method: 'POST',
     url: 'https://api-test.teamworkathletic.com/order_items',
-    data: data.body,
+    data: body,
   })
     .then(async ({ data: responseData }) => {
       console.log(JSON.stringify(responseData));
-      const res = await pubsub.topic('founders_response').publish(Buffer.from(JSON.stringify({ id, data })));
-      console.log(JSON.stringify({ res, id, data: responseData }));
+      const res = await pubsub.topic('founders_response').publish(Buffer.from(JSON.stringify({ jobId, jobTypeId, body: responseData })));
+      console.log(JSON.stringify({ res, jobId, jobTypeId, body: responseData }));
       return responseData;
     })
     .catch((err) => {
