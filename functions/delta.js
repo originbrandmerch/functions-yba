@@ -16,14 +16,16 @@ exports.deltaHook = (req, res) => {
 };
 
 exports.deltaOrder = functions.pubsub.topic('delta_order').onPublish((message) => {
+  console.log(typeof message);
+  console.log(JSON.stringify(message.json));
   const { id, data } = message.json;
   return axios({
     method: 'POST',
     url: 'https://sandbox.dtg2goportal.com/api/v1/workorders',
     headers: {
-      apikey: 'CD3D4D76634395EA7AA2019A3A10D2ED',
+      apikey: 'AB909D6C79252F0CCBC65870D1B89B40',
     },
-    data,
+    data: data?.body,
   })
     .then(async ({ data: responseData }) => {
       const res = await pubsub.topic('delta_response').publish(Buffer.from(JSON.stringify({ id, data: responseData })));
