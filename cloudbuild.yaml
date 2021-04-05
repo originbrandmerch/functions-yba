@@ -1,7 +1,7 @@
 steps:
-  - name: 'gcr.io/cloud-builders/npm'
+  - name: 'gcr.io/cloud-builders/npm:node-14'
     dir: 'functions'
     args: ['install']
 
   - name: 'gcr.io/$PROJECT_ID/firebase'
-    args: ['deploy', '--project=$PROJECT_ID', '--only=functions', '--runtime', 'nodejs14']
+    args: ['deploy', '--project=$PROJECT_ID', '--only=functions']
