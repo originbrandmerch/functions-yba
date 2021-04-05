@@ -25,7 +25,7 @@ exports.deltaOrder = functions.pubsub.topic('delta_order').onPublish((message) =
     headers: {
       apikey: 'AB909D6C79252F0CCBC65870D1B89B40',
     },
-    data: data?.body,
+    data: data.body,
   })
     .then(async ({ data: responseData }) => {
       const res = await pubsub.topic('delta_response').publish(Buffer.from(JSON.stringify({ id, data: responseData })));
