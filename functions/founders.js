@@ -4,12 +4,11 @@ const { pubsub } = require('./pubsub');
 
 exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((message) => {
   const { jobId, jobTypeId, body } = message.json;
-  console.log(body);
-  console.log(typeof body);
+  const jsonBody = JSON.parse(body);
   return axios({
     method: 'POST',
     url: 'https://api-test.teamworkathletic.com/order_items',
-    data: body,
+    data: jsonBody,
   })
     .then(async ({ data: responseData }) => {
       console.log(JSON.stringify(responseData));
