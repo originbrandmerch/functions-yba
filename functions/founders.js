@@ -4,6 +4,8 @@ const { pubsub } = require('./pubsub');
 
 exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((message) => {
   const { jobId, jobTypeId, body } = message.json;
+  console.log(body);
+  console.log(typeof body);
   return axios({
     method: 'POST',
     url: 'https://api-test.teamworkathletic.com/order_items',
