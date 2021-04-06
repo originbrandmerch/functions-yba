@@ -11,6 +11,7 @@ exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((mess
   })
     .then(async ({ data: responseData }) => {
       console.log(JSON.stringify(responseData));
+      console.log(responseData);
       const res = await pubsub.topic('founders_response').publish(Buffer.from(JSON.stringify({ jobId, jobTypeId, body: responseData })));
       console.log(JSON.stringify({ res, jobId, jobTypeId, body: responseData }));
       return responseData;
