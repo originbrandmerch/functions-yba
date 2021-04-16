@@ -1,6 +1,8 @@
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
+const { url } = require('./constants');
+const { admin } = require('./admin');
 
 exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((message) => {
   const { jobId, jobTypeId, body } = message.json;
@@ -22,3 +24,42 @@ exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((mess
       throw err;
     });
 });
+
+exports.foundersUpdates = functions
+  .runWith({ memory: '2GB', timeoutSeconds: 540 })
+  .pubsub.schedule('0 8-20 * * *')
+  .timeZone('America/Denver')
+  .onRun(async () => {
+    try {
+      console.log('Getting founders updates', Date.now());
+      const apiToken = await admin
+        .auth()
+        .createCustomToken(functions.config().fire.uid)
+        .catch((err) => {
+          throw err;
+        });
+      const filter = {
+        eager: {
+          $where: {
+            'lineItems.ybaSku.externalSku.companyId': 2,
+            'lineItems.statusId': {
+              $in: [3, 11, 4],
+            },
+          },
+        },
+      };
+      const unfulfilledFoundersOrders = await axios.get(`${url}/fulfillment/orders?filter=${JSON.stringify(filter)}`, {
+        headers: {
+          apiToken,
+        },
+      });
+      return Promise.all(
+        unfulfilledFoundersOrders.map(async (order) => {
+          return pubsub.topic('foundersUpdates').publish(Buffer.from(JSON.stringify(order)));
+        }),
+      );
+    } catch (err) {
+      console.error('whole thing', err.message);
+      return err;
+    }
+  });
