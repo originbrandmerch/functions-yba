@@ -8,7 +8,7 @@ router.use(cors({ origin: true }));
 const { randomPassword } = require('./utils');
 const { generatePDF } = require('./nes');
 const { deltaOrder, deltaHook } = require('./delta');
-const { foundersOrder } = require('./founders');
+const { foundersOrder, foundersUpdates } = require('./founders');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
 
 // routes
@@ -23,4 +23,5 @@ exports.deltaOrder = deltaOrder;
 exports.generatePDF = generatePDF;
 exports.foundersOrder = foundersOrder;
 exports.rankAdvancement = rankAdvancement;
+exports.foundersUpdates = foundersUpdates;
 exports.router = functions.https.onRequest(router);
