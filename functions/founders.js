@@ -58,7 +58,7 @@ exports.foundersUpdates = functions
         },
       );
       console.log(unfulfilledFoundersOrdersResponse);
-      const unfulfilledFoundersOrders = unfulfilledFoundersOrdersResponse?.data?.results;
+      const unfulfilledFoundersOrders = unfulfilledFoundersOrdersResponse.data.results;
       console.log(unfulfilledFoundersOrders);
 
       return Promise.all(
