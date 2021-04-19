@@ -49,7 +49,7 @@ exports.foundersUpdates = functions
         },
       };
       // TODO change this after we're pretty sure it works
-      const unfulfilledFoundersOrders = await axios.get(
+      const unfulfilledFoundersOrdersResponse = await axios.get(
         `https://yba-dev-v5py6hh2tq-uc.a.run.app/api/fulfillment/orders?filter=${JSON.stringify(filter)}`,
         {
           headers: {
@@ -57,6 +57,9 @@ exports.foundersUpdates = functions
           },
         },
       );
+      console.log(unfulfilledFoundersOrdersResponse);
+      const unfulfilledFoundersOrders = unfulfilledFoundersOrdersResponse.data;
+      console.log(unfulfilledFoundersOrders);
       return Promise.all(
         unfulfilledFoundersOrders.map(async (order) => {
           return pubsub.topic('foundersUpdates').publish(Buffer.from(JSON.stringify(order)));
