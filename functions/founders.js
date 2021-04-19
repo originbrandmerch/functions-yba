@@ -58,6 +58,7 @@ exports.foundersUpdates = functions
         },
       );
       const unfulfilledFoundersOrders = unfulfilledFoundersOrdersResponse.data;
+      console.log(unfulfilledFoundersOrders.length);
       return Promise.all(
         unfulfilledFoundersOrders.map(async (order) => {
           return pubsub.topic('foundersUpdates').publish(Buffer.from(JSON.stringify(order)));
