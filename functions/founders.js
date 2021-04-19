@@ -1,11 +1,10 @@
-/* eslint-disable no-console */
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
 // const { url } = require('./constants');
 const { admin } = require('./admin');
 
-exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((message) => {
+exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish(async (message) => {
   const { jobId, jobTypeId, body } = message.json;
   const jsonBody = JSON.parse(body);
   return axios({
@@ -26,54 +25,50 @@ exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((mess
     });
 });
 
-const getFoundersUpdates = async () => {
-  try {
-    console.log('Getting founders updates', Date.now());
-    const apiToken = await admin
-      .auth()
-      .createCustomToken(functions.config().fire.uid)
-      .catch((err) => {
-        throw err;
-      });
-    const filter = {
-      eager: {
-        $where: {
-          'lineItems.ybaSku.externalSku.companyId': 2,
-          'lineItems.statusId': {
-            $in: [3, 11, 4],
-          },
-        },
-      },
-    };
-    // TODO change this after we're pretty sure it works
-    const unfulfilledFoundersOrdersResponse = await axios.get(
-      `https://yba-dev-v5py6hh2tq-uc.a.run.app/api/fulfillment/orders?filter=${JSON.stringify(filter)}`,
-      {
-        headers: {
-          apiToken,
-        },
-      },
-    );
-    console.log(unfulfilledFoundersOrdersResponse);
-    const unfulfilledFoundersOrders = unfulfilledFoundersOrdersResponse?.data?.results;
-    console.log(unfulfilledFoundersOrders);
-
-    return Promise.all(
-      unfulfilledFoundersOrders.map(async (order) => {
-        console.log(order);
-        return pubsub.topic('foundersUpdates').publish(Buffer.from(JSON.stringify(order)));
-      }),
-    );
-  } catch (err) {
-    console.error('whole thing', err.message);
-    return err;
-  }
-};
-
-exports.getFoundersUpdates = getFoundersUpdates;
-
 exports.foundersUpdates = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
   .pubsub.schedule('0 8-20 * * *')
   .timeZone('America/Denver')
-  .onRun(getFoundersUpdates);
+  .onRun(async () => {
+    try {
+      console.log('Getting founders updates', Date.now());
+      const apiToken = await admin
+        .auth()
+        .createCustomToken(functions.config().fire.uid)
+        .catch((err) => {
+          throw err;
+        });
+      const filter = {
+        eager: {
+          $where: {
+            'lineItems.ybaSku.externalSku.companyId': 2,
+            'lineItems.statusId': {
+              $in: [3, 11, 4],
+            },
+          },
+        },
+      };
+      // TODO change this after we're pretty sure it works
+      const unfulfilledFoundersOrdersResponse = await axios.get(
+        `https://yba-dev-v5py6hh2tq-uc.a.run.app/api/fulfillment/orders?filter=${JSON.stringify(filter)}`,
+        {
+          headers: {
+            apiToken,
+          },
+        },
+      );
+      console.log(unfulfilledFoundersOrdersResponse);
+      const unfulfilledFoundersOrders = unfulfilledFoundersOrdersResponse?.data?.results;
+      console.log(unfulfilledFoundersOrders);
+
+      return Promise.all(
+        unfulfilledFoundersOrders.map(async (order) => {
+          console.log(order);
+          return pubsub.topic('foundersUpdates').publish(Buffer.from(JSON.stringify(order)));
+        }),
+      );
+    } catch (err) {
+      console.error('whole thing', err.message);
+      return err;
+    }
+  });

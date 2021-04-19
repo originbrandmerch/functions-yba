@@ -8,13 +8,12 @@ router.use(cors({ origin: true }));
 const { randomPassword } = require('./utils');
 const { generatePDF } = require('./nes');
 const { deltaOrder, deltaHook } = require('./delta');
-const { foundersOrder, foundersUpdates, getFoundersUpdates } = require('./founders');
+const { foundersOrder, foundersUpdates } = require('./founders');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
 
 // routes
 router.post('/sendEmail', sendEmailHandler);
 router.post('/hooks/delta', deltaHook);
-router.get('/test', getFoundersUpdates);
 
 exports.createPassword = functions.https.onRequest((req, res) => {
   res.send(randomPassword(10));
