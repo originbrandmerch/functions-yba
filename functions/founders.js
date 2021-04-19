@@ -1,7 +1,7 @@
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
-const { url } = require('./constants');
+// const { url } = require('./constants');
 const { admin } = require('./admin');
 
 exports.foundersOrder = functions.pubsub.topic('founders_order').onPublish((message) => {
