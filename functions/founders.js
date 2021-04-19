@@ -48,11 +48,15 @@ exports.foundersUpdates = functions
           },
         },
       };
-      const unfulfilledFoundersOrders = await axios.get(`${url}/fulfillment/orders?filter=${JSON.stringify(filter)}`, {
-        headers: {
-          apiToken,
+      // TODO change this after we're pretty sure it works
+      const unfulfilledFoundersOrders = await axios.get(
+        `https://yba-dev-v5py6hh2tq-uc.a.run.app/api/fulfillment/orders?filter=${JSON.stringify(filter)}`,
+        {
+          headers: {
+            apiToken,
+          },
         },
-      });
+      );
       return Promise.all(
         unfulfilledFoundersOrders.map(async (order) => {
           return pubsub.topic('foundersUpdates').publish(Buffer.from(JSON.stringify(order)));
