@@ -9,6 +9,7 @@ const { randomPassword } = require('./utils');
 const { generatePDF } = require('./nes');
 const { deltaOrder, deltaHook } = require('./delta');
 const { foundersOrder, foundersUpdates } = require('./founders');
+const { sanmarSync } = require('./sanmar');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
 
 // routes
@@ -24,4 +25,5 @@ exports.generatePDF = generatePDF;
 exports.foundersOrder = foundersOrder;
 exports.rankAdvancement = rankAdvancement;
 exports.foundersUpdates = foundersUpdates;
+exports.sanmarSync = sanmarSync;
 exports.router = functions.https.onRequest(router);
