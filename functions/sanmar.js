@@ -36,7 +36,7 @@ exports.sanmarSync = functions
       const styles = [];
 
       for (const entry of skuResponse.data) {
-        if (!styles.find((style) => entry?.externalSku?.styleId === style.id)) {
+        if (!styles.find((style) => entry.externalSku.styleId === style.id)) {
           styles.push(entry.externalSku.style);
         }
       }
