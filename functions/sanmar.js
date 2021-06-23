@@ -32,7 +32,6 @@ exports.sanmarSync = functions
           apiToken,
         },
       });
-      console.log(skuResponse);
       const styles = [];
 
       for (const entry of skuResponse.data) {
@@ -41,12 +40,11 @@ exports.sanmarSync = functions
         }
       }
 
-      console.log(styles);
-
+      const sanmarPassword = functions.config().sanmar.password;
       const styleRequests = styles.map((style) => ({
         'shar:wsVersion': '2.0.0',
         'shar:id': 'mckaycourt',
-        'shar:password': 12341234,
+        'shar:password': sanmarPassword,
         'shar:productId': style.style,
         'shar:Filter': {
           'shar:partIdArray': {
@@ -58,8 +56,6 @@ exports.sanmarSync = functions
           },
         },
       }));
-
-      console.log(styleRequests);
 
       return Promise.all(
         styleRequests.map(async (sRequest) => {
