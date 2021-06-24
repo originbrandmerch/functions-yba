@@ -20,7 +20,7 @@ exports.ssSync = functions
       const filter = {
         eager: {
           $where: {
-            'externalSku.vendorId': 415,
+            'externalSku.vendorId': 405,
           },
           externalSku: {
             style: {},
@@ -32,34 +32,10 @@ exports.ssSync = functions
           apiToken,
         },
       });
-      const styles = [];
-
-      for (const entry of skuResponse.data) {
-        if (!styles.find((style) => entry.externalSku.styleId === style.id)) {
-          styles.push(entry.externalSku.style);
-        }
-      }
-
-      const sanmarPassword = functions.config().sanmar.password;
-      const styleRequests = styles.map((style) => ({
-        'shar:wsVersion': '2.0.0',
-        'shar:id': 'mckaycourt',
-        'shar:password': sanmarPassword,
-        'shar:productId': style.style,
-        'shar:Filter': {
-          'shar:partIdArray': {
-            'shar:partId': skuResponse.data
-              .filter((d) => d.externalSku.styleId === style.id)
-              .map((rd) => {
-                return rd.externalSku.sku;
-              }),
-          },
-        },
-      }));
 
       return Promise.all(
-        styleRequests.map(async (sRequest) => {
-          return pubsub.topic('sanmarUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
+        skuResponse.map(async (sRequest) => {
+          return pubsub.topic('ssUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {
