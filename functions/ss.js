@@ -27,7 +27,7 @@ exports.ssSync = functions
           },
         },
       };
-      const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
@@ -35,7 +35,7 @@ exports.ssSync = functions
 
       return Promise.all(
         skuResponse.map(async (sRequest) => {
-          return pubsub.topic('ssUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
+          return pubsub.topic('ssUpdate-drew').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {
