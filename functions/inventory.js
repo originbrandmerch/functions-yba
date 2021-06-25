@@ -40,18 +40,20 @@ exports.inventorySync = functions
         result.data.results.map(async (store) => {
           return Promise.all(
             store.products.map((product) => {
-              return product.ybaSkus.map((ybaSku) => {
-                if (ybaSku.externalSku) {
-                  return pubsub.topic('inventoryUpdate-drew').publish(
-                    Buffer.from(
-                      JSON.stringify({
-                        storeId: store.id,
-                        externalSku: ybaSku.externalSku,
-                      }),
-                    ),
-                  );
-                }
-              });
+              return Promise.all(
+                product.ybaSkus.map((ybaSku) => {
+                  if (ybaSku.externalSku) {
+                    return pubsub.topic('inventoryUpdate-drew').publish(
+                      Buffer.from(
+                        JSON.stringify({
+                          storeId: store.id,
+                          externalSku: ybaSku.externalSku,
+                        }),
+                      ),
+                    );
+                  }
+                }),
+              );
             }),
           );
         }),
