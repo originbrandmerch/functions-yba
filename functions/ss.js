@@ -27,7 +27,7 @@ exports.ssSync = functions
           },
         },
       };
-      const skuResponse = await axios.get(`https://yba-dev-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
