@@ -10,6 +10,7 @@ const { generatePDF } = require('./nes');
 const { deltaOrder, deltaHook } = require('./delta');
 const { foundersOrder, foundersUpdates } = require('./founders');
 const { sanmarSync } = require('./sanmar');
+const { ssSync } = require('./ss');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
 
 // routes
@@ -26,4 +27,5 @@ exports.foundersOrder = foundersOrder;
 exports.rankAdvancement = rankAdvancement;
 exports.foundersUpdates = foundersUpdates;
 exports.sanmarSync = sanmarSync;
+exports.ssSync = ssSync;
 exports.router = functions.https.onRequest(router);
