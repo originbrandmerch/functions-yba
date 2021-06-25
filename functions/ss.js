@@ -6,7 +6,7 @@ const { pubsub } = require('./pubsub');
 
 exports.ssSync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
-  .pubsub.schedule('0 1 * * *')
+  .pubsub.schedule('0 0,6,12,18 * * *')
   .timeZone('America/Denver')
   .onRun(async () => {
     try {

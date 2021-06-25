@@ -6,7 +6,7 @@ const { pubsub } = require('./pubsub');
 
 exports.sanmarSync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
-  .pubsub.schedule('0 1 * * *')
+  .pubsub.schedule('0 1,7,13,19 * * *')
   .timeZone('America/Denver')
   .onRun(async () => {
     try {
