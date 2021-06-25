@@ -36,7 +36,7 @@ exports.ssSync = functions
       return Promise.all(
         skuResponse.data.map(async (sRequest) => {
           console.log(`Sending pubsub push ${sRequest.id}`);
-          return pubsub.topic('ssUpdate-dev').publish(Buffer.from(JSON.stringify(sRequest)));
+          return pubsub.topic('ssUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {
