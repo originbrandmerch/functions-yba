@@ -27,15 +27,16 @@ exports.ssSync = functions
           },
         },
       };
-      const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://yba-dev-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
       });
 
       return Promise.all(
-        skuResponse.map(async (sRequest) => {
-          return pubsub.topic('ssUpdate-drew').publish(Buffer.from(JSON.stringify(sRequest)));
+        skuResponse.data.map(async (sRequest) => {
+          console.log(`Sending pubsub push ${sRequest.id}`);
+          return pubsub.topic('ssUpdate-dev').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {
