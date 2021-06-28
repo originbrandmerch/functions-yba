@@ -11,6 +11,7 @@ const { deltaOrder, deltaHook } = require('./delta');
 const { foundersOrder, foundersUpdates } = require('./founders');
 const { sanmarSync } = require('./sanmar');
 const { ssSync } = require('./ss');
+const { inventorySync } = require('./inventory');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
 
 // routes
@@ -28,4 +29,5 @@ exports.rankAdvancement = rankAdvancement;
 exports.foundersUpdates = foundersUpdates;
 exports.sanmarSync = sanmarSync;
 exports.ssSync = ssSync;
+exports.inventorySync = inventorySync;
 exports.router = functions.https.onRequest(router);
