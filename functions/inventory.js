@@ -25,6 +25,9 @@ exports.inventorySync = functions
           },
           products: {
             ybaSkus: {
+              $where: {
+                statusId: 1
+              },
               externalProduct: {},
             },
           },
