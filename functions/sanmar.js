@@ -4,6 +4,8 @@ const functions = require('firebase-functions');
 const { admin } = require('./admin');
 const { pubsub } = require('./pubsub');
 
+const SANMAR_VENDOR_ID = 415
+
 exports.sanmarSync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
   .pubsub.schedule('0 1,7,13,19 * * *')
@@ -20,14 +22,16 @@ exports.sanmarSync = functions
       const filter = {
         eager: {
           $where: {
-            'externalSku.vendorId': 415,
+            'rawMaterial.externalSkus.vendorId': SANMAR_VENDOR_ID,
           },
-          externalSku: {
+          rawMaterial: {
             style: {},
+            externalSkus: {},
           },
         },
       };
-      const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      // const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
@@ -35,8 +39,8 @@ exports.sanmarSync = functions
       const styles = [];
 
       for (const entry of skuResponse.data) {
-        if (!styles.find((style) => entry.externalSku.styleId === style.id)) {
-          styles.push(entry.externalSku.style);
+        if (!styles.find((style) => entry.rawMaterial.styleId === style.id)) {
+          styles.push(entry.rawMaterial.style);
         }
       }
 
@@ -49,9 +53,10 @@ exports.sanmarSync = functions
         'shar:Filter': {
           'shar:partIdArray': {
             'shar:partId': skuResponse.data
-              .filter((d) => d.externalSku.styleId === style.id)
+              .filter((d) => d.rawMaterial.styleId === style.id)
               .map((rd) => {
-                return rd.externalSku.sku;
+                const eSku = rd.rawMaterial.externalSkus.find((eSku) => eSku.vendorId === SANMAR_VENDOR_ID)
+                return eSku.sku;
               }),
           },
         },
@@ -59,7 +64,7 @@ exports.sanmarSync = functions
 
       return Promise.all(
         styleRequests.map(async (sRequest) => {
-          return pubsub.topic('sanmarUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
+          return pubsub.topic('sanmarUpdate-drew').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {
