@@ -25,7 +25,10 @@ exports.inventorySync = functions
           },
           products: {
             ybaSkus: {
-              externalSku: {},
+              $where: {
+                statusId: 1
+              },
+              externalProduct: {},
             },
           },
         },
@@ -42,12 +45,12 @@ exports.inventorySync = functions
             store.products.map((product) => {
               return Promise.all(
                 product.ybaSkus.map((ybaSku) => {
-                  if (ybaSku.externalSku) {
+                  if (ybaSku.externalProduct && ybaSku.inventoryItemId) {
                     return pubsub.topic('inventoryUpdate-drew').publish(
                       Buffer.from(
                         JSON.stringify({
+                          ybaSku,
                           storeId: store.id,
-                          externalSku: ybaSku.externalSku,
                         }),
                       ),
                     );
