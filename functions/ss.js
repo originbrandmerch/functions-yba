@@ -4,6 +4,8 @@ const functions = require('firebase-functions');
 const { admin } = require('./admin');
 const { pubsub } = require('./pubsub');
 
+const SS_VENDOR_ID = 405
+
 exports.ssSync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
   .pubsub.schedule('0 0,6,12,18 * * *')
@@ -20,14 +22,16 @@ exports.ssSync = functions
       const filter = {
         eager: {
           $where: {
-            'externalSku.vendorId': 405,
+            'rawMaterial.externalSkus.vendorId': SS_VENDOR_ID,
           },
-          externalSku: {
+          rawMaterial: {
             style: {},
+            externalSkus: {}
           },
         },
       };
-      const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      // const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
@@ -36,7 +40,7 @@ exports.ssSync = functions
       return Promise.all(
         skuResponse.data.map(async (sRequest) => {
           console.log(`Sending pubsub push ${sRequest.id}`);
-          return pubsub.topic('ssUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
+          return pubsub.topic('ssUpdate-drew').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {
