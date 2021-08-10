@@ -20,9 +20,6 @@ exports.inventorySync = functions
 
       const filter = {
         eager: {
-          $where: {
-            shipThroughShopify: true,
-          },
           products: {
             ybaSkus: {
               $where: {
@@ -39,16 +36,14 @@ exports.inventorySync = functions
           apiToken,
         },
       });
-      console.log(result)
       await Promise.all(
         result.data.results.map(async (store) => {
           return Promise.all(
             store.products.map((product) => {
               return Promise.all(
                 product.ybaSkus.map((ybaSku) => {
-                  console.log(ybaSku)
                   if (ybaSku.rawMaterial && ybaSku.inventoryItemId) {
-                    console.log('sending pubsub')
+                    console.log(`sending pubsub ${ybaSku}`)
                     return pubsub.topic('inventoryUpdate-drew').publish(
                       Buffer.from(
                         JSON.stringify({
