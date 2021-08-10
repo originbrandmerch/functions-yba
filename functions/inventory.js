@@ -28,7 +28,7 @@ exports.inventorySync = functions
               $where: {
                 statusId: 1
               },
-              externalProduct: {},
+              rawMaterial: {},
             },
           },
         },
@@ -45,7 +45,7 @@ exports.inventorySync = functions
             store.products.map((product) => {
               return Promise.all(
                 product.ybaSkus.map((ybaSku) => {
-                  if (ybaSku.externalProduct && ybaSku.inventoryItemId) {
+                  if (ybaSku.rawMaterial && ybaSku.inventoryItemId) {
                     return pubsub.topic('inventoryUpdate-drew').publish(
                       Buffer.from(
                         JSON.stringify({
