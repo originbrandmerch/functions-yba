@@ -38,7 +38,7 @@ exports.inventorySync = functions
       });
       console.log(result)
       await Promise.all(
-        result.data.results.map(async (store) => {
+        result.data.map(async (store) => {
           return Promise.all(
             store.products.map((product) => {
               return Promise.all(
