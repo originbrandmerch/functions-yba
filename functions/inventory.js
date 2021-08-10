@@ -36,6 +36,7 @@ exports.inventorySync = functions
           apiToken,
         },
       });
+      console.log(result)
       await Promise.all(
         result.data.results.map(async (store) => {
           return Promise.all(
