@@ -31,7 +31,7 @@ exports.inventorySync = functions
         },
       };
 
-      const result = await axios.get(`https://lordrahl.ngrok.io/api/stores?filter=${JSON.stringify(filter)}`, {
+      const result = await axios.get(`https://lordrahl.ngrok.io/api/stores?pageSize=9999999&filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
