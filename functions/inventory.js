@@ -21,6 +21,9 @@ exports.inventorySync = functions
       const filter = {
         eager: {
           products: {
+            $where: {
+              statusId: 1,
+            },
             ybaSkus: {
               $where: {
                 statusId: 1
