@@ -4,7 +4,7 @@ const functions = require('firebase-functions');
 const { admin } = require('./admin');
 const { pubsub } = require('./pubsub');
 
-const SS_VENDOR_ID = 405
+const SS_VENDOR_ID = 405;
 
 exports.ssSync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
@@ -26,12 +26,12 @@ exports.ssSync = functions
           },
           rawMaterial: {
             style: {},
-            externalSkus: {}
+            externalSkus: {},
           },
         },
       };
-      // const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
-      const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      // const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },

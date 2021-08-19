@@ -26,7 +26,7 @@ exports.inventorySync = functions
             },
             ybaSkus: {
               $where: {
-                statusId: 1
+                statusId: 1,
               },
               rawMaterial: {},
             },
@@ -34,7 +34,7 @@ exports.inventorySync = functions
         },
       };
 
-      const result = await axios.get(`https://lordrahl.ngrok.io/api/stores?pageSize=9999999&filter=${JSON.stringify(filter)}`, {
+      const result = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/stores?pageSize=9999999&filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
@@ -46,7 +46,7 @@ exports.inventorySync = functions
               return Promise.all(
                 product.ybaSkus.map((ybaSku) => {
                   if (ybaSku.rawMaterial && ybaSku.inventoryItemId) {
-                    console.log(`sending pubsub ${ybaSku}`)
+                    console.log(`sending pubsub ${ybaSku}`);
                     return pubsub.topic('inventoryUpdate-prod').publish(
                       Buffer.from(
                         JSON.stringify({

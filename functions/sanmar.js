@@ -4,7 +4,7 @@ const functions = require('firebase-functions');
 const { admin } = require('./admin');
 const { pubsub } = require('./pubsub');
 
-const SANMAR_VENDOR_ID = 415
+const SANMAR_VENDOR_ID = 415;
 
 exports.sanmarSync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
@@ -30,8 +30,8 @@ exports.sanmarSync = functions
           },
         },
       };
-      // const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
-      const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      // const skuResponse = await axios.get(`https://lordrahl.ngrok.io/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
+      const skuResponse = await axios.get(`https://yba-live-v5py6hh2tq-uc.a.run.app/api/fulfillment/ybaSkus?filter=${JSON.stringify(filter)}`, {
         headers: {
           apiToken,
         },
@@ -55,7 +55,7 @@ exports.sanmarSync = functions
             'shar:partId': skuResponse.data
               .filter((d) => d.rawMaterial.styleId === style.id)
               .map((rd) => {
-                const eSku = rd.rawMaterial.externalSkus.find((eSku) => eSku.vendorId === SANMAR_VENDOR_ID)
+                const eSku = rd.rawMaterial.externalSkus.find((eSku) => eSku.vendorId === SANMAR_VENDOR_ID);
                 return eSku.sku;
               }),
           },
