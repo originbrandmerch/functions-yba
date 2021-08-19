@@ -64,7 +64,7 @@ exports.sanmarSync = functions
 
       return Promise.all(
         styleRequests.map(async (sRequest) => {
-          return pubsub.topic('sanmarUpdate-drew').publish(Buffer.from(JSON.stringify(sRequest)));
+          return pubsub.topic('sanmarUpdate-prod').publish(Buffer.from(JSON.stringify(sRequest)));
         }),
       );
     } catch (err) {

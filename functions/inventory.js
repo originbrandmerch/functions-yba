@@ -47,7 +47,7 @@ exports.inventorySync = functions
                 product.ybaSkus.map((ybaSku) => {
                   if (ybaSku.rawMaterial && ybaSku.inventoryItemId) {
                     console.log(`sending pubsub ${ybaSku}`)
-                    return pubsub.topic('inventoryUpdate-drew').publish(
+                    return pubsub.topic('inventoryUpdate-prod').publish(
                       Buffer.from(
                         JSON.stringify({
                           ybaSku,
