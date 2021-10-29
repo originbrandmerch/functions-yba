@@ -3,8 +3,8 @@ const axios = require('axios');
 const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
 
-const { username } = functions.config().deconetwork;
-const { password } = functions.config().deconetwork;
+const { username } = functions.config().deconet;
+const { password } = functions.config().deconet;
 const productionStatus = 3; // 1 = Order Placed, 2 = Produced, 3 = Shipped
 const decoURL = `http://www.shirtyourself.secure-decoration.com/api/json/manage_orders/find?conditions[1][field]=4&conditions[1][condition]=1&conditions[1][string]=${productionStatus}&limit=10&offset=0&sortby=1&include_workflow_data=1&include_po_data=1&include_shipments=1&include_production_file_info=1&skip_login_token=1&username=${username}&password=${password}`;
 // const deltaURL = `https://sandbox.dtg2goportal.com/api/v1/workorders`; //Sandbox
