@@ -58,7 +58,7 @@ exports.getDecoOrders = functions
     });
 
     const sendToMSAS = (w) => {
-      return pubsub.topic(`create_work_order_mckay`).publish(Buffer.from(JSON.stringify(w)));
+      return pubsub.topic(`create_work_order_prod`).publish(Buffer.from(JSON.stringify(w)));
     };
 
     const sendToDelta = (o) => {
