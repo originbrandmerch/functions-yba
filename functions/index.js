@@ -14,6 +14,7 @@ const { sanmarSync } = require('./sanmar');
 const { ssSync } = require('./ss');
 const { inventorySync } = require('./inventory');
 const { sendEmailHandler, rankAdvancement } = require('./beachbody');
+const { getDecoOrders } = require('./deconet');
 
 // routes
 router.post('/sendEmail', sendEmailHandler);
@@ -32,4 +33,5 @@ exports.foundersUpdates = foundersUpdates;
 exports.sanmarSync = sanmarSync;
 exports.ssSync = ssSync;
 exports.inventorySync = inventorySync;
+exports.getDecoOrders = getDecoOrders;
 exports.router = functions.https.onRequest(router);
