@@ -65,14 +65,8 @@ exports.getDecoOrders = functions
       return axios({ method: 'post', url: deltaURL, data: o, headers: { apikey: deltaApiKey } })
         .then(({ data }) => data)
         .catch((err) => {
-          if (err) {
-            if (err.response) {
-              if (err.response.data) {
-                if (err.response.data.errors) {
-                  throw err.response.data.errors;
-                }
-              }
-            }
+          if (err?.response?.data?.errors) {
+            throw err.response.data.errors;
           }
         });
     };
