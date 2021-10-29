@@ -55,7 +55,7 @@ exports.sanmarSync = functions
             'shar:partId': skuResponse.data
               .filter((d) => d.rawMaterial.styleId === style.id)
               .map((rd) => {
-                const eSku = rd.rawMaterial.externalSkus.find((eSku) => eSku.vendorId === SANMAR_VENDOR_ID);
+                const eSku = rd.rawMaterial.externalSkus.find((es) => es.vendorId === SANMAR_VENDOR_ID);
                 return eSku.sku;
               }),
           },

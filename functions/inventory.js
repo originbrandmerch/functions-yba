@@ -8,6 +8,7 @@ exports.inventorySync = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
   .pubsub.schedule('0 2,8,14,20 * * *')
   .timeZone('America/Denver')
+  // eslint-disable-next-line consistent-return
   .onRun(async () => {
     try {
       console.log('Syncing inventory with shopify ', Date.now());
@@ -56,6 +57,7 @@ exports.inventorySync = functions
                       ),
                     );
                   }
+                  return null;
                 }),
               );
             }),

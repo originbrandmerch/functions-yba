@@ -168,5 +168,6 @@ exports.getDecoOrders = functions
 
     const deltaResults = await Promise.allSettled(deltaOrders.map(sendToDelta));
 
+    // eslint-disable-next-line no-console
     console.log('Delta Orders', JSON.stringify(deltaResults));
   });
