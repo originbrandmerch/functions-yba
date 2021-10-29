@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
