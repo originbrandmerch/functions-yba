@@ -2,15 +2,16 @@
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { pubsub } = require('./pubsub');
+const logger = require('./winston');
 
 const { username } = functions.config().deconet;
 const { password } = functions.config().deconet;
 const productionStatus = 1; // 1 = Order Placed, 2 = Produced, 3 = Shipped
 const decoURL = `http://www.shirtyourself.secure-decoration.com/api/json/manage_orders/find?conditions[1][field]=4&conditions[1][condition]=1&conditions[1][string]=${productionStatus}&limit=10&offset=0&sortby=1&include_workflow_data=1&include_po_data=1&include_shipments=1&include_production_file_info=1&skip_login_token=1&username=${username}&password=${password}`;
-const deltaURL = `https://sandbox.dtg2goportal.com/api/v1/workorders`; // Sandbox
-// const deltaURL = `https://www.dtg2goportal.com/api/v1/workorders`; // Production
-const deltaApiKey = `AB909D6C79252F0CCBC65870D1B89B40`; // SandBox
-// const deltaApiKey = functions.config().deconet.deltaapikey; // Production
+// const deltaURL = `https://sandbox.dtg2goportal.com/api/v1/workorders`; // Sandbox
+const deltaURL = `https://www.dtg2goportal.com/api/v1/workorders`; // Production
+// const deltaApiKey = `AB909D6C79252F0CCBC65870D1B89B40`; // SandBox
+const deltaApiKey = functions.config().deconet.deltaapikey; // Production
 
 exports.getDecoOrders = functions
   .runWith({ memory: '2GB', timeoutSeconds: 540 })
@@ -168,6 +169,7 @@ exports.getDecoOrders = functions
 
     const deltaResults = await Promise.allSettled(deltaOrders.map(sendToDelta));
 
-    // eslint-disable-next-line no-console
-    console.log('Delta Orders', JSON.stringify(deltaResults));
+    if (deltaResults.length) {
+      logger.info('Delta Orders', JSON.stringify(deltaResults));
+    }
   });
