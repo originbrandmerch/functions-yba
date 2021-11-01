@@ -69,6 +69,7 @@ exports.getDecoOrders = functions
           if (err?.response?.data?.errors) {
             throw err.response.data.errors;
           }
+          throw err;
         });
     };
 
@@ -170,6 +171,6 @@ exports.getDecoOrders = functions
     const deltaResults = await Promise.allSettled(deltaOrders.map(sendToDelta));
 
     if (deltaResults.length) {
-      logger.info('Delta Orders', JSON.stringify(deltaResults));
+      logger.info('Delta Orders', deltaResults);
     }
   });
