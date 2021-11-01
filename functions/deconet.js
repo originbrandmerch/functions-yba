@@ -34,6 +34,7 @@ exports.getDecoOrders = functions
         productionComplete: 1,
         cspCostReviewed: 1,
         sales: [{ userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 }],
+        orderProcessors: [{ uid: 'e6TVCt6Z7lhomXrofdSndXJI5Dk2' }],
         contacts: [
           {
             address1: order.billing_details.street,
