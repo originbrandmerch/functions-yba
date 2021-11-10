@@ -25,6 +25,11 @@ exports.createPassword = functions.https.onRequest((req, res) => {
   res.send(randomPassword(10));
 });
 
+// exports.translate = functions.https.onRequest(async (req, res) => {
+//   const results = await translate();
+//   res.send(results);
+// });
+
 exports.deltaOrder = deltaOrder;
 exports.generatePDF = generatePDF;
 exports.foundersOrder = foundersOrder;

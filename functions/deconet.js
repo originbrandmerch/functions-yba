@@ -1,8 +1,14 @@
 /* eslint-disable no-shadow */
 const axios = require('axios');
 const functions = require('firebase-functions');
+const { Storage } = require('@google-cloud/storage');
+const FormData = require('form-data');
 const { pubsub } = require('./pubsub');
 const logger = require('./winston');
+
+const storage = new Storage();
+const bucketName = 'yba-shirts.appspot.com';
+const bucket = storage.bucket(bucketName);
 
 const { username } = functions.config().deconet;
 const { password } = functions.config().deconet;
@@ -13,82 +19,134 @@ const deltaURL = `https://www.dtg2goportal.com/api/v1/workorders`; // Production
 // const deltaApiKey = `AB909D6C79252F0CCBC65870D1B89B40`; // SandBox
 const deltaApiKey = functions.config().deconet.deltaapikey; // Production
 
-exports.getDecoOrders = functions
-  .runWith({ memory: '2GB', timeoutSeconds: 540 })
-  .pubsub.schedule('0 * * * *')
-  .timeZone('America/Denver')
-  .onRun(async () => {
-    const data = await axios({
-      method: 'get',
-      url: decoURL,
-    }).then(({ data }) => data);
-    const workOrders = data.orders.map((order) => {
-      return {
-        workOrderID: `SY-${order.order_id}`,
-        customerName: 'YBA Web Store',
-        customerID: 5201,
-        orderType: 'webOrder',
-        salesType: 'E-Commerce',
-        costAndInvoiceComplete: 1,
-        salesApproved: 1,
-        productionComplete: 1,
-        cspCostReviewed: 1,
-        sales: [{ userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 }],
-        orderProcessors: [{ uid: 'e6TVCt6Z7lhomXrofdSndXJI5Dk2' }],
-        contacts: [
-          {
-            address1: order.billing_details.street,
-            address2: '',
-            city: order.billing_details.city,
-            zip: order.billing_details.postcode,
-            state: {},
-            country: {},
-            co: `${order.billing_details.firstname} ${order.billing_details.lastname}`,
-            email: order.billing_details.email,
-            phone: order.billing_details.ph_number,
-            organization: order.billing_details.company,
-            type: 'billing',
-          },
-        ],
-        invoices: order.order_lines.map((line) => ({
-          unitPrice: line.unit_price,
-          quantity: line.qty,
-          bill: line.total_price,
-          type: line.product_name,
-        })),
-      };
+const translate = async () => {
+  const data = await axios({
+    method: 'get',
+    url: decoURL,
+  }).then(({ data }) => data);
+  const workOrders = data.orders.map((order) => {
+    return {
+      workOrderID: `SY-${order.order_id}`,
+      customerName: 'YBA Web Store',
+      customerID: 5201,
+      orderType: 'webOrder',
+      salesType: 'E-Commerce',
+      costAndInvoiceComplete: 1,
+      salesApproved: 1,
+      productionComplete: 1,
+      cspCostReviewed: 1,
+      sales: [{ userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 }],
+      orderProcessors: [{ uid: 'e6TVCt6Z7lhomXrofdSndXJI5Dk2' }],
+      contacts: [
+        {
+          address1: order.billing_details.street,
+          address2: '',
+          city: order.billing_details.city,
+          zip: order.billing_details.postcode,
+          state: {},
+          country: {},
+          co: `${order.billing_details.firstname} ${order.billing_details.lastname}`,
+          email: order.billing_details.email,
+          phone: order.billing_details.ph_number,
+          organization: order.billing_details.company,
+          type: 'billing',
+        },
+      ],
+      invoices: order.order_lines.map((line) => ({
+        unitPrice: line.unit_price,
+        quantity: line.qty,
+        bill: line.total_price,
+        type: line.product_name,
+      })),
+    };
+  });
+
+  const sendToMSAS = (w) => {
+    return pubsub.topic(`create_work_order_prod`).publish(Buffer.from(JSON.stringify(w)));
+  };
+
+  const sendToDelta = (o) => {
+    return axios({ method: 'post', url: deltaURL, data: o, headers: { apikey: deltaApiKey } })
+      .then(({ data }) => data)
+      .catch((err) => {
+        if (err?.response?.data?.errors) {
+          throw err.response.data.errors;
+        }
+        throw err;
+      });
+  };
+
+  const updateDeco = (orderId, newStatus, shippingCode, contactCustomer) => {
+    const form = new FormData();
+    form.append('username', username);
+    form.append('password', password);
+    form.append('order_id', orderId);
+    form.append('new_status', newStatus);
+    if (shippingCode) {
+      form.append('shipping_code', shippingCode);
+    }
+    if (contactCustomer) {
+      form.append('contact_customer', contactCustomer);
+    }
+    return axios({
+      method: 'post',
+      url: 'http://www.shirtyourself.secure-decoration.com/api/json/manage_orders/update_order_status',
+      data: form,
+      headers: form.getHeaders(),
     });
+  };
 
-    const sendToMSAS = (w) => {
-      return pubsub.topic(`create_work_order_prod`).publish(Buffer.from(JSON.stringify(w)));
-    };
-
-    const sendToDelta = (o) => {
-      return axios({ method: 'post', url: deltaURL, data: o, headers: { apikey: deltaApiKey } })
-        .then(({ data }) => data)
-        .catch((err) => {
-          if (err?.response?.data?.errors) {
-            throw err.response.data.errors;
-          }
-          throw err;
+  const decoToGoogle = async (u, fileName) => {
+    const url = `${u}&skip_login_token=1&username=${username}&password=${password}`;
+    return new Promise((res, rej) => {
+      try {
+        axios({ method: 'get', url, responseType: 'stream' }).then(({ data }) => {
+          const file = bucket.file(fileName);
+          const stream = file
+            .createWriteStream()
+            .on('error', (err) => {
+              throw err;
+            })
+            .on('finish', async () => {
+              await file.makePublic();
+              res(file.publicUrl());
+            });
+          data.pipe(stream);
         });
-    };
+      } catch (err) {
+        rej(err);
+      }
+    });
+  };
 
-    await Promise.all(workOrders.map(sendToMSAS));
+  await Promise.all(workOrders.map(sendToMSAS));
 
-    const deltaOrders = data.orders
-      .map((order) => {
-        return order.order_lines
+  const deltaOrders = await Promise.all(
+    data.orders.map((order) => {
+      return Promise.all(
+        order.order_lines
           .filter((o) => o.views.find((v) => v.areas.find((a) => a.processes.find((p) => p.process === 'DTG'))))
-          .map((line) => {
+          .map(async (line) => {
             const frontView = line.views.find((v) => v.view_name === 'Front');
             const frontArea = frontView.areas.find((a) => a.area_name === 'Body');
             const frontMockUp = `https://shirtyourself.com${frontView.thumbnail}`;
-            const frontDesign = frontArea.processes[0].production_file_url;
+            let frontDesign = frontArea.processes[0].production_file_url;
             const backView = line.views.find((v) => v.view_name === 'Back');
             const backArea = backView?.areas.find((a) => a.area_name === 'Back');
             const backMockUp = `https://shirtyourself.com${backView?.thumbnail}`;
-            const backDesign = backArea?.processes[0].production_file_url;
+            let backDesign = backArea?.processes[0].production_file_url;
+            if (frontDesign) {
+              frontDesign = await decoToGoogle(
+                frontDesign,
+                `shirt-yourself/${order.order_id}/${line.id}/${frontArea.area_name}-mockup.${frontArea.processes[0].format}`,
+              );
+            }
+            if (backDesign) {
+              backDesign = await decoToGoogle(
+                backDesign,
+                `shirt-yourself/${order.order_id}/${line.id}/${backArea.area_name}-mockup.${backArea.processes[0].format}`,
+              );
+            }
             const skus = line.fields[0]?.options?.map((o) => ({ sku: o.sku, qty: o.qty }));
             return skus?.map(({ sku, qty }) => {
               const shippingDetails = {
@@ -161,17 +219,32 @@ exports.getDecoOrders = functions
                   url: 'https://firebasestorage.googleapis.com/v0/b/yba-shirts.appspot.com/o/Screen%20Shot%202019-10-24%20at%201.45.48%20PM.png?alt=media&token=8c2a2860-3387-4c2b-a194-b814c2206a08',
                 };
               }
+              logger.info('Delta Order', o);
               return o;
             });
           })
-          .flat();
-      })
-      .flat()
-      .filter((o) => o);
+          .flat(),
+      );
+    }),
+  );
 
-    const deltaResults = await Promise.allSettled(deltaOrders.map(sendToDelta));
+  const filteredDeltaOrders = deltaOrders
+    .flat()
+    .flat()
+    .filter((o) => o);
 
-    if (deltaResults.length) {
-      logger.info('Delta Orders', deltaResults);
-    }
-  });
+  const deltaResults = await Promise.allSettled(filteredDeltaOrders.map(sendToDelta));
+
+  if (deltaResults.length) {
+    logger.info('Delta Order Status', deltaResults);
+  }
+  return { deltaResults, workOrders };
+};
+
+exports.getDecoOrders = functions
+  .runWith({ memory: '2GB', timeoutSeconds: 540 })
+  .pubsub.schedule('0 * * * *')
+  .timeZone('America/Denver')
+  .onRun(translate);
+
+exports.translate = translate;
