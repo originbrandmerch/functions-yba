@@ -19,6 +19,11 @@ const deltaURL = `https://www.dtg2goportal.com/api/v1/workorders`; // Production
 // const deltaApiKey = `AB909D6C79252F0CCBC65870D1B89B40`; // SandBox
 const deltaApiKey = functions.config().deconet.deltaapikey; // Production
 
+const convertDateToSQL = (d) => {
+  const date = new Date(d);
+  return `${date.toISOString().split('T')[0]} ${date.toTimeString().split(' ')[0]}`;
+};
+
 const translate = async () => {
   const data = await axios({
     method: 'get',
@@ -28,6 +33,7 @@ const translate = async () => {
     return {
       workOrderID: `SY-${order.order_id}`,
       customerName: 'YBA Web Store',
+      invoiceDate: convertDateToSQL(order.date_ordered),
       customerID: 5201,
       orderType: 'webOrder',
       salesType: 'E-Commerce',
