@@ -64,7 +64,7 @@ const translate = async () => {
             }).then(({ data }) => data);
             return { notes: sku, perUnit: cost, totalQuantity: qty, totalEstimatedCost: cost * qty, vendorID: vendor.id };
           }
-          return { cost: 0, message: `couldn't find it` };
+          return { notes: `couldn't find sku` };
         }),
       );
       return {
