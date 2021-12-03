@@ -5,6 +5,8 @@ const { Storage } = require('@google-cloud/storage');
 const FormData = require('form-data');
 const { pubsub } = require('./pubsub');
 const logger = require('./winston');
+const { admin } = require('./admin');
+const { url } = require('./constants');
 
 const storage = new Storage();
 const bucketName = 'yba-shirts.appspot.com';
@@ -24,48 +26,85 @@ const convertDateToSQL = (d) => {
   return `${date.toISOString().split('T')[0]} ${date.toTimeString().split(' ')[0]}`;
 };
 
+const getApiKey = () => {
+  return admin
+    .auth()
+    .createCustomToken(functions.config().fire.uid)
+    .catch((err) => {
+      throw err;
+    });
+};
+
 const translate = async () => {
   const data = await axios({
     method: 'get',
     url: decoURL,
   }).then(({ data }) => data);
-  const workOrders = data.orders.map((order) => {
-    return {
-      workOrderID: `SY-${order.order_id}`,
-      customerName: 'YBA Web Store',
-      invoiceDate: convertDateToSQL(order.date_ordered),
-      customerID: 5201,
-      orderType: 'webOrder',
-      salesType: 'E-Commerce',
-      costAndInvoiceComplete: 1,
-      salesApproved: 1,
-      productionComplete: 1,
-      cspCostReviewed: 1,
-      sales: [{ userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 }],
-      orderProcessors: [{ uid: 'e6TVCt6Z7lhomXrofdSndXJI5Dk2' }],
-      contacts: [
-        {
-          address1: order.billing_details.street,
-          address2: '',
-          city: order.billing_details.city,
-          zip: order.billing_details.postcode,
-          state: {},
-          country: {},
-          co: `${order.billing_details.firstname} ${order.billing_details.lastname}`,
-          email: order.billing_details.email,
-          phone: order.billing_details.ph_number,
-          organization: order.billing_details.company,
-          type: 'billing',
-        },
-      ],
-      invoices: order.order_lines.map((line) => ({
-        unitPrice: line.unit_price,
-        quantity: line.qty,
-        bill: line.total_price,
-        type: line.product_name,
-      })),
-    };
-  });
+  const apiToken = await getApiKey();
+  const workOrders = await Promise.all(
+    data.orders.map(async (order) => {
+      const { order_lines: orderLines } = order;
+      const costs = await Promise.all(
+        orderLines.map(async (line) => {
+          const { product_id: productId, fields, qty } = line;
+          const sku = fields?.[0]?.options?.[0]?.sku;
+          if (sku) {
+            const { product } = await axios({
+              method: 'get',
+              url: `http://www.shirtyourself.secure-decoration.com/api/json/manage_products/get?username=${username}&password=${password}&id=${productId}`,
+            }).then(({ data }) => data);
+            const { skus, supplier } = product;
+            const { cost } = skus.find((s) => s.sku === sku);
+            const vendor = await axios({
+              method: 'get',
+              url: `${url}/vendors/getByName/${supplier}`,
+              headers: {
+                apiToken,
+              },
+            }).then(({ data }) => data);
+            return { notes: sku, perUnit: cost, totalQuantity: qty, totalEstimatedCost: cost * qty, vendorID: vendor.id };
+          }
+          return { cost: 0, message: `couldn't find it` };
+        }),
+      );
+      return {
+        workOrderID: `SY-${order.order_id}`,
+        customerName: 'YBA Web Store',
+        invoiceDate: convertDateToSQL(order.date_ordered),
+        customerID: 5201,
+        orderType: 'webOrder',
+        salesType: 'E-Commerce',
+        costAndInvoiceComplete: 1,
+        salesApproved: 1,
+        productionComplete: 1,
+        cspCostReviewed: 1,
+        sales: [{ userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 }],
+        orderProcessors: [{ uid: 'e6TVCt6Z7lhomXrofdSndXJI5Dk2' }],
+        contacts: [
+          {
+            address1: order.billing_details.street,
+            address2: '',
+            city: order.billing_details.city,
+            zip: order.billing_details.postcode,
+            state: {},
+            country: {},
+            co: `${order.billing_details.firstname} ${order.billing_details.lastname}`,
+            email: order.billing_details.email,
+            phone: order.billing_details.ph_number,
+            organization: order.billing_details.company,
+            type: 'billing',
+          },
+        ],
+        costs,
+        invoices: order.order_lines.map((line) => ({
+          unitPrice: line.unit_price,
+          quantity: line.qty,
+          bill: line.total_price,
+          type: line.product_name,
+        })),
+      };
+    }),
+  );
 
   const sendToMSAS = (w) => {
     return pubsub.topic(`create_work_order_prod`).publish(Buffer.from(JSON.stringify(w)));
