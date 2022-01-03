@@ -67,6 +67,12 @@ const translate = async () => {
           return { notes: `couldn't find sku` };
         }),
       );
+      // const byuOrders = costs.filter(({ notes }) => notes.includes('BYU'));
+      // if (byuOrders.length) {
+      //   const totalByuCost = byuOrders.reduce((total, { totalEstimatedCost }) => total + totalEstimatedCost, 0);
+      //   const royalty = totalByuCost / 0.86 - totalByuCost;
+      //   costs.push({ notes: 'BYU Royalty', totalQuantity: 1, perUnit: royalty, totalEstimatedCost: royalty });
+      // }
       return {
         workOrderID: `SY-${order.order_id}`,
         customerName: 'YBA Web Store',
@@ -114,6 +120,7 @@ const translate = async () => {
     return axios({ method: 'post', url: deltaURL, data: o, headers: { apikey: deltaApiKey } })
       .then(({ data }) => data)
       .catch((err) => {
+        logger.error("Couldn't place Delta Order", { err, o });
         if (err?.response?.data?.errors) {
           throw err.response.data.errors;
         }
@@ -213,7 +220,7 @@ const translate = async () => {
                 shippingDetails.to_phone = order.shipping_details.ph_number;
               }
               const o = {
-                merchant_order_id: `SY-${order.order_id}-${line.id}`,
+                merchant_order_id: `SY-${order.order_id}-${line.id}-${sku}`,
                 merchant_custom_1: `SY-${order.order_id}`,
                 product_name: line.product_name,
                 merchant_sku: line.product_code,
