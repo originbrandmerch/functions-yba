@@ -39,7 +39,11 @@ const translate = async () => {
   const data = await axios({
     method: 'get',
     url: decoURL,
-  }).then(({ data }) => data);
+  })
+    .then(({ data }) => data)
+    .catch((err) => {
+      logger.error('Error retrieving orders', { error: err.response.data });
+    });
   const apiToken = await getApiKey();
   const workOrders = await Promise.all(
     data.orders.map(async (order) => {
