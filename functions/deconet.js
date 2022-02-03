@@ -1,4 +1,4 @@
-/* eslint-disable no-shadow */
+/* eslint-disable no-shadow,camelcase */
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { Storage } = require('@google-cloud/storage');
@@ -17,9 +17,12 @@ const { password } = functions.config().deconet;
 const productionStatus = 1; // 1 = Order Placed, 2 = Produced, 3 = Shipped
 const decoURL = `http://www.shirtyourself.secure-decoration.com/api/json/manage_orders/find?conditions[1][field]=4&conditions[1][condition]=1&conditions[1][string]=${productionStatus}&limit=10&offset=0&sortby=1&include_workflow_data=1&include_po_data=1&include_shipments=1&include_production_file_info=1&skip_login_token=1&username=${username}&password=${password}`;
 // const deltaURL = `https://sandbox.dtg2goportal.com/api/v1/workorders`; // Sandbox
-const deltaURL = `https://www.dtg2goportal.com/api/v1/workorders`; // Production
+// const deltaURL = `https://www.dtg2goportal.com/api/v1/workorders`; // Production
 // const deltaApiKey = `AB909D6C79252F0CCBC65870D1B89B40`; // SandBox
-const deltaApiKey = functions.config().deconet.deltaapikey; // Production
+// const deltaApiKey = functions.config().deconet.deltaapikey; // Production
+
+const ORDER_DESK_URL = 'https://app.orderdesk.me/api/v2/orders';
+const { store_id, api_key } = functions.config().orderdesk;
 
 const convertDateToSQL = (d) => {
   const date = new Date(d);
@@ -88,7 +91,10 @@ const translate = async () => {
         salesApproved: 1,
         productionComplete: 1,
         cspCostReviewed: 1,
-        sales: [{ userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 }],
+        sales: [
+          { userID: 'UH18T05Z9AOEYx6JzZ4TdJis1ME3', assignedCommission: 1 },
+          { userID: 'coar4DwAoedBjf9yg0rsrYtCWZG2', assignedCommission: 0 },
+        ],
         orderProcessors: [{ uid: 'e6TVCt6Z7lhomXrofdSndXJI5Dk2' }],
         contacts: [
           {
@@ -120,11 +126,16 @@ const translate = async () => {
     return pubsub.topic(`create_work_order_prod`).publish(Buffer.from(JSON.stringify(w)));
   };
 
-  const sendToDelta = (o) => {
-    return axios({ method: 'post', url: deltaURL, data: o, headers: { apikey: deltaApiKey } })
+  const sendToOrderDesk = (o) => {
+    return axios({
+      method: 'post',
+      url: ORDER_DESK_URL,
+      data: o,
+      headers: { 'ORDERDESK-STORE-ID': store_id, 'ORDERDESK-API-KEY': api_key },
+    })
       .then(({ data }) => data)
       .catch((err) => {
-        logger.error("Couldn't place Delta Order", { err, o });
+        logger.error("Couldn't place Order Desk Order", { err, o });
         if (err?.response?.data?.errors) {
           throw err.response.data.errors;
         }
@@ -177,18 +188,62 @@ const translate = async () => {
 
   await Promise.all(workOrders.map(sendToMSAS));
 
-  const deltaOrders = await Promise.all(
-    data.orders.map((order) => {
-      return Promise.all(
+  const orderDeskOrders = await Promise.all(
+    data.orders.map(async (order) => {
+      const { billing_details, shipping_details, taxes } = order;
+      const tax_total = taxes[0].amount;
+      const { email } = billing_details;
+
+      let shipping = {
+        first_name: billing_details.firstname,
+        last_name: billing_details.lastname,
+        company: billing_details.company,
+        address1: billing_details.street,
+        address2: '',
+        city: billing_details.city,
+        state: billing_details.state,
+        postal_code: billing_details.postcode,
+        country: billing_details.country_code,
+        phone: billing_details.ph_number,
+      };
+
+      if (shipping_details) {
+        shipping = {
+          first_name: shipping_details.firstname,
+          last_name: shipping_details.lastname,
+          company: shipping_details.company,
+          address1: shipping_details.street,
+          address2: '',
+          city: shipping_details.city,
+          state: shipping_details.state,
+          postal_code: shipping_details.postcode,
+          country: shipping_details.country_code,
+          phone: shipping_details.ph_number,
+        };
+      }
+
+      const customer = {
+        first_name: billing_details.firstname,
+        last_name: billing_details.lastname,
+        company: billing_details.company,
+        address1: billing_details.street,
+        address2: '',
+        city: billing_details.city,
+        state: billing_details.state,
+        postal_code: billing_details.postcode,
+        country: billing_details.country_code,
+        phone: billing_details.ph_number,
+      };
+      const orderItems = await Promise.all(
         order.order_lines
           .filter((o) => o.views.find((v) => v.areas.find((a) => a.processes.find((p) => p.process === 'DTG'))))
           .map(async (line) => {
             const frontView = line.views.find((v) => v.view_name === 'Front');
-            const frontArea = frontView.areas.find((a) => a.area_name === 'Body');
+            const frontArea = frontView?.areas.find((a) => a.area_name === 'Classic - Front');
             const frontMockUp = `https://shirtyourself.com${frontView.thumbnail}`;
-            let frontDesign = frontArea.processes[0].production_file_url;
+            let frontDesign = frontArea?.processes[0].production_file_url;
             const backView = line.views.find((v) => v.view_name === 'Back');
-            const backArea = backView?.areas.find((a) => a.area_name === 'Back');
+            const backArea = backView?.areas.find((a) => a.area_name === 'Classic - Back');
             const backMockUp = `https://shirtyourself.com${backView?.thumbnail}`;
             let backDesign = backArea?.processes[0].production_file_url;
             if (frontDesign) {
@@ -203,98 +258,57 @@ const translate = async () => {
                 `shirt-yourself/${order.order_id}/${line.id}/${backArea.area_name}-mockup.${backArea.processes[0].format}`,
               );
             }
-            const skus = line.fields[0]?.options?.map((o) => ({ sku: o.sku, qty: o.qty }));
-            return skus?.map(({ sku, qty }) => {
-              const shippingDetails = {
-                to_name: `${order.billing_details.firstname} ${order.billing_details.lastname}`,
-                to_address: order.billing_details.street,
-                to_city: order.billing_details.city,
-                to_state: order.billing_details.state,
-                to_zip: order.billing_details.postcode,
-                to_country: order.billing_details.country_code,
-                to_phone: order.billing_details.ph_number,
-              };
-              if (order.shipping_details) {
-                shippingDetails.to_name = `${order.shipping_details.firstname} ${order.shipping_details.lastname}`;
-                shippingDetails.to_address = order.shipping_details.street;
-                shippingDetails.to_city = order.shipping_details.city;
-                shippingDetails.to_state = order.shipping_details.state;
-                shippingDetails.to_zip = order.shipping_details.postcode;
-                shippingDetails.to_country = order.shipping_details.country_code;
-                shippingDetails.to_phone = order.shipping_details.ph_number;
-              }
+            const { unit_price, qty: q } = line;
+            const price = unit_price * q;
+            const skus = line.fields[0]?.options?.map((o) => ({ sku: o.sku, qty: o.qty, size: o.name }));
+            return skus?.map(({ sku, qty, size }) => {
               const o = {
-                merchant_order_id: `SY-${order.order_id}-${line.id}-${sku}`,
-                merchant_custom_1: `SY-${order.order_id}`,
-                product_name: line.product_name,
-                merchant_sku: line.product_code,
-                ...shippingDetails,
-                designs: [],
-                variations: [
-                  {
-                    delta_sku: sku,
-                    quantities: [
-                      {
-                        quantity: qty,
-                      },
-                    ],
-                  },
-                ],
+                // id: '42286',
+                name: line.product_name,
+                price,
+                quantity: qty,
+                // weight: 1,
+                code: sku,
+                delivery_type: 'ship',
+                category_code: 'DEFAULT',
+                variation_list: {
+                  Size: size,
+                  Color: line.product_color.name,
+                },
+                metadata: {
+                  print_sku: sku,
+                },
               };
               if (frontDesign) {
-                o.front_image = {
-                  url: frontMockUp,
-                };
-                o.designs.push({
-                  position: 'Front',
-                  underbase: 'on',
-                  media: {
-                    url: frontDesign,
-                  },
-                });
+                o.metadata.print_preview_1 = frontMockUp;
+                o.metadata.print_url_1 = frontDesign;
+                o.metadata.print_location_1 = 'Front';
+                o.metadata.print_height_1 = 349.25;
+                o.metadata.print_width_1 = 495.3;
               }
               if (backDesign) {
-                o.back_image = {
-                  url: backMockUp,
-                };
-                o.designs.push({
-                  position: 'Back',
-                  underbase: 'on',
-                  media: {
-                    url: backDesign,
-                  },
-                });
+                o.metadata.print_preview_2 = backMockUp;
+                o.metadata.print_url_2 = backDesign;
+                o.metadata.print_location_2 = 'Back';
+                o.metadata.print_height_2 = 349.25;
+                o.metadata.print_width_2 = 495.3;
               }
-              if (!o.front_image) {
-                o.front_image = {
-                  url: 'https://firebasestorage.googleapis.com/v0/b/yba-shirts.appspot.com/o/Screen%20Shot%202019-10-24%20at%201.45.48%20PM.png?alt=media&token=8c2a2860-3387-4c2b-a194-b814c2206a08',
-                };
-              }
-              if (!o.back_image) {
-                o.back_image = {
-                  url: 'https://firebasestorage.googleapis.com/v0/b/yba-shirts.appspot.com/o/Screen%20Shot%202019-10-24%20at%201.45.48%20PM.png?alt=media&token=8c2a2860-3387-4c2b-a194-b814c2206a08',
-                };
-              }
-              logger.info('Delta Order', o);
               return o;
             });
-          })
-          .flat(),
+          }),
       );
+      return { source_id: `SY-${order.order_id}`, email, shipping, customer, tax_total, order_items: orderItems.flat() };
     }),
   );
 
-  const filteredDeltaOrders = deltaOrders
-    .flat()
-    .flat()
-    .filter((o) => o);
+  logger.info('Order Desk Orders', orderDeskOrders);
 
-  const deltaResults = await Promise.allSettled(filteredDeltaOrders.map(sendToDelta));
-
-  if (deltaResults.length) {
-    logger.info('Delta Order Status', deltaResults);
+  const orderDeskResults = await Promise.allSettled(orderDeskOrders.map(sendToOrderDesk));
+  if (orderDeskResults.length) {
+    logger.info('Order Desk Order Status', orderDeskResults);
   }
-  return { deltaResults, workOrders };
+
+  return { orderDeskResults, workOrders };
 };
 
 exports.getDecoOrders = functions
