@@ -283,15 +283,11 @@ const translate = async () => {
                 o.metadata.print_preview_1 = frontMockUp;
                 o.metadata.print_url_1 = frontDesign;
                 o.metadata.print_location_1 = 'Front';
-                o.metadata.print_height_1 = 349.25;
-                o.metadata.print_width_1 = 495.3;
               }
               if (backDesign) {
                 o.metadata.print_preview_2 = backMockUp;
                 o.metadata.print_url_2 = backDesign;
                 o.metadata.print_location_2 = 'Back';
-                o.metadata.print_height_2 = 349.25;
-                o.metadata.print_width_2 = 495.3;
               }
               return o;
             });
