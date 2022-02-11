@@ -1,4 +1,4 @@
-/* eslint-disable no-shadow,camelcase */
+/* eslint-disable no-shadow,camelcase,consistent-return */
 const axios = require('axios');
 const functions = require('firebase-functions');
 const { Storage } = require('@google-cloud/storage');
@@ -22,7 +22,6 @@ const decoURL = `http://www.shirtyourself.secure-decoration.com/api/json/manage_
 // const deltaApiKey = functions.config().deconet.deltaapikey; // Production
 
 const ORDER_DESK_URL = 'https://app.orderdesk.me/api/v2/orders';
-const { store_id, api_key } = functions.config().orderdesk;
 
 const convertDateToSQL = (d) => {
   const date = new Date(d);
@@ -48,9 +47,32 @@ const translate = async () => {
       logger.error('Error retrieving orders', { error: err.response.data });
     });
   const apiToken = await getApiKey();
+
+  const getOrderDeskStores = async () => {
+    const filter = JSON.stringify({ eager: { $where: { decoStore: true } } });
+    return axios({
+      method: 'GET',
+      url: `${url}/integrations/order-desk/store?filter=${filter}`,
+      headers: {
+        apiToken,
+      },
+    }).then(({ data }) => data);
+  };
+  const stores = await getOrderDeskStores();
+
+  const findStore = (storeName) => {
+    const store = stores.find(({ name }) => name === storeName);
+    if (!store) throw new Error(`No Order Desk Store Linked with name: ${storeName}`);
+    return store;
+  };
+
   const workOrders = await Promise.all(
     data.orders.map(async (order) => {
-      const { order_lines: orderLines } = order;
+      const { order_lines: orderLines, store } = order;
+      const { name: storeName } = store;
+      const { code: storeCode } = findStore(storeName);
+      if (storeCode !== 'SY') return;
+
       const costs = await Promise.all(
         orderLines.map(async (line) => {
           const { product_id: productId, fields, qty } = line;
@@ -81,7 +103,7 @@ const translate = async () => {
       //   costs.push({ notes: 'BYU Royalty', totalQuantity: 1, perUnit: royalty, totalEstimatedCost: royalty });
       // }
       return {
-        workOrderID: `SY-${order.order_id}`,
+        workOrderID: `${storeCode}-${order.order_id}`,
         customerName: 'YBA Web Store',
         invoiceDate: convertDateToSQL(order.date_ordered),
         customerID: 5201,
@@ -126,12 +148,12 @@ const translate = async () => {
     return pubsub.topic(`create_work_order_prod`).publish(Buffer.from(JSON.stringify(w)));
   };
 
-  const sendToOrderDesk = (o) => {
+  const sendToOrderDesk = ({ headers, order }) => {
     return axios({
       method: 'post',
       url: ORDER_DESK_URL,
-      data: o,
-      headers: { 'ORDERDESK-STORE-ID': store_id, 'ORDERDESK-API-KEY': api_key },
+      data: order,
+      headers,
     })
       .then(({ data }) => data)
       .catch((err) => {
@@ -186,12 +208,14 @@ const translate = async () => {
     });
   };
 
-  await Promise.all(workOrders.map(sendToMSAS));
+  await Promise.all(workOrders.filter((workOrder) => workOrder).map(sendToMSAS));
 
   const orderDeskOrders = await Promise.all(
     data.orders.map(async (order) => {
-      const { billing_details, shipping_details, taxes } = order;
-      const tax_total = taxes[0].amount;
+      const { store, billing_details, shipping_details, taxes } = order;
+      const { name: storeName } = store;
+      const { headers, code: storeCode } = stores.find(({ name }) => name === storeName);
+      const tax_total = taxes?.[0].amount;
       const { email } = billing_details;
 
       let shipping = {
@@ -293,7 +317,10 @@ const translate = async () => {
             });
           }),
       );
-      return { source_id: `SY-${order.order_id}`, email, shipping, customer, tax_total, order_items: orderItems.flat() };
+      return {
+        headers,
+        order: { source_id: `${storeCode}-${order.order_id}`, email, shipping, customer, tax_total, order_items: orderItems.flat() },
+      };
     }),
   );
 
