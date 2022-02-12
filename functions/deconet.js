@@ -157,7 +157,7 @@ const translate = async () => {
     })
       .then(({ data }) => data)
       .catch((err) => {
-        logger.error("Couldn't place Order Desk Order", { err, o });
+        logger.error("Couldn't place Order Desk Order", { err, order });
         if (err?.response?.data?.errors) {
           throw err.response.data.errors;
         }
