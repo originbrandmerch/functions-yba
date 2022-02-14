@@ -273,13 +273,13 @@ const translate = async () => {
             if (frontDesign) {
               frontDesign = await decoToGoogle(
                 frontDesign,
-                `shirt-yourself/${order.order_id}/${line.id}/${frontArea.area_name}-mockup.${frontArea.processes[0].format}`,
+                `shirt-yourself/${order.order_id}/${line.id}/${frontArea.area_name.replace(/ /g, '')}-mockup.${frontArea.processes[0].format}`,
               );
             }
             if (backDesign) {
               backDesign = await decoToGoogle(
                 backDesign,
-                `shirt-yourself/${order.order_id}/${line.id}/${backArea.area_name}-mockup.${backArea.processes[0].format}`,
+                `shirt-yourself/${order.order_id}/${line.id}/${backArea.area_name.replace(/ /g, '')}-mockup.${backArea.processes[0].format}`,
               );
             }
             const { unit_price, qty: q } = line;
